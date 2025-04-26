@@ -356,19 +356,19 @@ function animate() {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", childPath);
     path.setAttribute("fill", `url(#${childGradIds[i]})`);
-    // Fade out as dragTarget increases
-    const fadeStart = 40, fadeEnd = 140;
+    // Fade out as dragTarget increases, much more slowly
+    const fadeStart = 40, fadeEnd = 340; // much wider range for slower fade
     const fade = Math.min(1, Math.max(0, (fadeEnd - Math.abs(state.dragTarget)) / (fadeEnd - fadeStart)));
     path.setAttribute("opacity", fade * 0.95);
     childrenGroup.appendChild(path);
-    // Emit particles only once when orb is fully faded
-    if (!state.dissolved && fade < 0.05) {
+    // Emit particles only once when orb is truly fully faded (very close to zero)
+    if (!state.dissolved && fade < 0.01) {
       const color = lerpColor(fam[0], fam[1], tcol);
       emitParticles(x, y, color, 3);
       state.dissolved = true;
     }
-    // Reset dissolved flag if orb returns
-    if (state.dissolved && fade > 0.2) {
+    // Reset dissolved flag only when orb is mostly reformed (fade > 0.8)
+    if (state.dissolved && fade > 0.8) {
       state.dissolved = false;
     }
   }
