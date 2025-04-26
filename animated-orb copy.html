@@ -371,6 +371,27 @@ function animate() {
 const particlesGroup = document.getElementById('particles');
 let particles = [];
 
+function animateParticles() {
+  // Update and render particles
+  particles = particles.filter(p => p.life > 0);
+  particlesGroup.innerHTML = '';
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.98;
+    p.vy *= 0.98;
+    p.life -= p.decay;
+    p.opacity = Math.max(0, p.life);
+    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circ.setAttribute("cx", p.x);
+    circ.setAttribute("cy", p.y);
+    circ.setAttribute("r", p.r * p.opacity);
+    circ.setAttribute("fill", p.color);
+    circ.setAttribute("opacity", p.opacity * 0.7);
+    particlesGroup.appendChild(circ);
+  }
+}
+
 function emitParticles(x, y, color, count = 8) {
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * 2 * Math.PI;
