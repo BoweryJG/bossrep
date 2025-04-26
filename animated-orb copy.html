@@ -57,7 +57,6 @@
     </radialGradient>
   </defs>
   <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95"/>
-  <g id="connections"></g>
   <g id="children"></g>
 </svg>
 <script>
@@ -172,7 +171,6 @@ adjustSVGSize();
 window.addEventListener('resize', adjustSVGSize);
 
 const childrenGroup = document.getElementById('children');
-const connectionsGroup = document.getElementById('connections');
 const childOrbs = [];
 
 // --- Orb State Management ---
@@ -317,77 +315,7 @@ function animate() {
   let behind = [], front = [];
   const parentY = window.parentCenter.y;
   childrenGroup.innerHTML = '';
-  connectionsGroup.innerHTML = '';
 
-  // --- Animate connections (lightning/data lines) ---
-  // Each child has a chance to show a connection to parent, always at least one
-  let activeConnections = [];
-  for (let i = 0; i < childCount; i++) {
-    // Randomly decide if this connection is active (10% chance per frame, or always if none active)
-    if (Math.random() < 0.10 || (activeConnections.length === 0 && i === childCount - 1)) {
-      activeConnections.push(i);
-    }
-  }
-  for (const i of activeConnections) {
-    // Get parent and child orb center positions
-    const state = orbStates[i + 1];
-    const fam = getDynamicColorFamily(i, now);
-    const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
-    const color = lerpColor(fam[0], fam[1], tcol);
-    // Parent center
-    const px = window.parentCenter.x;
-    const py = window.parentCenter.y;
-    // Child center (match orb animation math)
-    const baseAngle = (now * 0.00022 + i * (2 * Math.PI / childCount));
-    const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-    const parentR = (parentRadius + state.drag * 0.15) * (window.orbScale || 1);
-    const minEdge = Math.min(
-      window.parentCenter.x,
-      vw - window.parentCenter.x,
-      window.parentCenter.y,
-      vh - window.parentCenter.y
-    );
-    const maxChildOrbit = Math.max(40, minEdge - parentR - childRadius * (window.orbScale || 1) - 16);
-    const orbitPhase = now * (0.00012 + 0.00007 * i) + i * 1.13;
-    const orbitWobble = Math.sin(orbitPhase) * 0.18 + Math.cos(orbitPhase * 0.7) * 0.09;
-    const minOrbit = parentR + childRadius * (window.orbScale || 1) + 12;
-    let rawOrbit = (parentR + 60 + (i * 0.71 + 1.4) * maxChildOrbit / childCount) * (0.7 + 0.23 * orbitWobble);
-    const orbitRadius = Math.max(rawOrbit, minOrbit);
-    const ellipseA = orbitRadius * 1.3 * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
-    const ellipseB = orbitRadius * 1.1 * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
-    const angle = baseAngle + Math.sin(now * 0.00009 + i * 1.7) * 0.22;
-    const dragAngle = orbMorphDirections[i + 1];
-    const dx = Math.cos(dragAngle) * state.drag;
-    const dy = Math.sin(dragAngle) * state.drag;
-    const x = window.parentCenter.x + Math.cos(angle) * ellipseA + dx;
-    const y = window.parentCenter.y + Math.sin(angle) * ellipseB + dy;
-    // Lightning path: zigzag or smooth polyline from parent to child
-    const segs = 7;
-    let points = [];
-    for (let s = 0; s <= segs; s++) {
-      const t = s / segs;
-      // Linear interp
-      let lx = px + (x - px) * t;
-      let ly = py + (y - py) * t;
-      // Add jitter for lightning
-      if (s > 0 && s < segs) {
-        const jitter = 13 * Math.sin(now * 0.004 + i * 1.7 + s * 2.5 + Math.random() * 2);
-        lx += jitter * (Math.random() - 0.5);
-        ly += jitter * (Math.random() - 0.5);
-      }
-      points.push(`${lx},${ly}`);
-    }
-    const lightning = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-    lightning.setAttribute("points", points.join(" "));
-    lightning.setAttribute("fill", "none");
-    lightning.setAttribute("stroke", color);
-    lightning.setAttribute("stroke-width", 2.3);
-    lightning.setAttribute("stroke-linecap", "round");
-    lightning.setAttribute("stroke-linejoin", "round");
-    lightning.setAttribute("opacity", 0.82 + 0.18 * Math.sin(now * 0.008 + i * 1.3));
-    lightning.setAttribute("filter", "url(#glow)");
-    connectionsGroup.appendChild(lightning);
-  }
   for (let i = 0; i < childCount; i++) {
     const state = orbStates[i + 1];
     // Animate dynamic color family for each orb
