@@ -93,7 +93,7 @@ function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   return d;
 }
 
-const parentRadius = 50;
+const parentRadius = 40;
 const orbMorphDirection = Math.PI / 2;
 const orbMorphSpeed = 0.012;
 
@@ -112,14 +112,11 @@ function adjustSVGSize() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   window.viewportSize = {vw, vh};
-  const minDim = Math.min(vw, vh);
-  const scale = minDim / (parentRadius * 2);
   const svg = document.getElementById('orbSVG');
   svg.setAttribute('width', vw);
   svg.setAttribute('height', vh);
   svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
   window.parentCenterBase = window.parentCenter = {x: vw/2, y: vh/2};
-  window.orbScale = scale;
 }
 adjustSVGSize();
 window.addEventListener('resize', adjustSVGSize);
@@ -184,12 +181,12 @@ function animate() {
   const py = vh / 2;
   window.parentCenter = {x: px, y: py};
 
-  const parentR = (parentRadius + orbState.drag * 0.15) * (window.orbScale || 1);
-  const parentAmp = (1 + Math.abs(orbState.drag) * 0.008) * (window.orbScale || 1);
+  const parentR = parentRadius + orbState.drag * 0.15;
+  const parentAmp = 1 + Math.abs(orbState.drag) * 0.008;
   const parentMorphT = now * 0.0004;
   const parentDx = Math.cos(orbMorphDirection) * orbState.drag;
   const parentDy = Math.sin(orbMorphDirection) * orbState.drag;
-  const parentPath = generateSuperSmoothBlob(px + parentDx * (window.orbScale || 1), py + parentDy * (window.orbScale || 1), parentR, 64, parentMorphT, parentAmp);
+  const parentPath = generateSuperSmoothBlob(px + parentDx, py + parentDy, parentR, 64, parentMorphT, parentAmp);
   parentOrb.setAttribute('d', parentPath);
 
   requestAnimationFrame(animate);
