@@ -2,26 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Animated Parent Orb Only</title>
+  <title>Aesthetic Orb Animation</title>
   <style>
     body {
-
       margin: 0;
       height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: transparent;
+      overflow: hidden;
     }
     svg {
       width: 100vw;
       height: 100vh;
       display: block;
-
       position: fixed;
       top: 0;
       left: 0;
       pointer-events: none;
       touch-action: none;
+      background: transparent;
     }
   </style>
 </head>
@@ -29,15 +27,16 @@
 <svg id="orbSVG">
   <defs>
     <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
-      <stop id="p0" offset="0%" stop-color="#00E5FF"/>
-      <stop id="p1" offset="100%" stop-color="#5B3CFF"/>
-      <stop id="p2" offset="50%" stop-color="#00E5FF"/>
-      <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
+      <stop id="p0" offset="0%" stop-color="#FF00C8"/>
+      <stop id="p1" offset="100%" stop-color="#FFB300"/>
+      <stop id="p2" offset="50%" stop-color="#D500F9"/>
+      <stop id="p3" offset="75%" stop-color="#FF4081"/>
     </radialGradient>
   </defs>
-  <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95"/>
+  <path id="parentOrb" fill="url(#parentGrad)" opacity="0.96"/>
 </svg>
 <script>
+// --- Utility Functions ---
 function hslToHex(h, s, l) {
   h /= 360; s /= 100; l /= 100;
   let r, g, b;
@@ -59,7 +58,6 @@ function hslToHex(h, s, l) {
   }
   return "#" + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, "0")).join("");
 }
-
 function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   const pts = [];
   for (let i = 0; i < points; i++) {
@@ -92,11 +90,21 @@ function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   d += "Z";
   return d;
 }
+function approach(current, target, speed) {
+  return current + (target - current) * speed;
+}
+function dampedSpring(current, target, velocity, stiffness, damping) {
+  const force = (target - current) * stiffness;
+  velocity += force;
+  velocity *= damping;
+  current += velocity;
+  return [current, velocity];
+}
 
+// --- Orb State ---
 const parentRadius = 40;
 const orbMorphDirection = Math.PI / 2;
 const orbMorphSpeed = 0.012;
-
 function makeOrbState() {
   return {
     drag: 0,
@@ -108,6 +116,7 @@ function makeOrbState() {
 }
 const orbState = makeOrbState();
 
+// --- SVG Sizing ---
 function adjustSVGSize() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -123,39 +132,7 @@ window.addEventListener('resize', adjustSVGSize);
 
 const parentOrb = document.getElementById('parentOrb');
 
-
-function approach(current, target, speed) {
-  return current + (target - current) * speed;
-}
-function dampedSpring(current, target, velocity, stiffness, damping) {
-  const force = (target - current) * stiffness;
-  velocity += force;
-  velocity *= damping;
-  current += velocity;
-  return [current, velocity];
-}
-
-function animate() {
-  // Animate parent gradient
-  const parentStops = [
-    { id: "p0", phase: 0 },
-    { id: "p1", phase: Math.PI * 0.5 },
-    { id: "p2", phase: Math.PI },
-    { id: "p3", phase: Math.PI * 1.5 }
-  ];
-  const now = performance.now();
-  // Aesthetic palette: magenta, pink, violet, soft gold
-  const baseHue = 315; // Centered on magenta/rose
-  const hueSpread = 25; // ±25 for variety (290–340)
-  for (let i = 0; i < parentStops.length; i++) {
-    const stop = parentStops[i];
-    const hue = baseHue + hueSpread * Math.sin(now * 0.00015 + stop.phase); // 290–340
-    const sat = 92 + 6 * Math.sin(now * 0.0002 + stop.phase); // Vibrant
-    const light = 62 + 8 * Math.cos(now * 0.00018 + stop.phase); // Rich, not white
-    document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
-  }
-
-// --- Mouse tracking for proximity and velocity (outside animate) ---
+// --- Mouse and Haptic Events ---
 window.mouse = { x: window.innerWidth/2, y: window.innerHeight/2, lastX: window.innerWidth/2, lastY: window.innerHeight/2, speed: 0 };
 window.addEventListener('mousemove', (e) => {
   window.mouse.lastX = window.mouse.x;
@@ -172,6 +149,7 @@ document.getElementById('parentOrb').addEventListener('click', () => {
   }
 });
 
+// --- Animation Loop ---
 function animate() {
   // Animate parent gradient
   const parentStops = [
@@ -205,11 +183,10 @@ function animate() {
   orbState.dragTarget = approach(orbState.dragTarget, 0, 0.018 + orbMorphSpeed * 0.6);
 
   // Anchor orb in the center, no drift
-  // Use already set window.viewportSize and window.parentCenter
   const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
   const {x: px, y: py} = window.parentCenter || {x: vw/2, y: vh/2};
 
-  // Mouse proximity and velocity effects (only declared ONCE per frame)
+  // Mouse proximity and velocity effects
   const dist = Math.sqrt(Math.pow(px - window.mouse.x, 2) + Math.pow(py - window.mouse.y, 2));
   const maxDist = Math.min(vw, vh) / 2;
   const proximity = 1 - Math.min(dist / maxDist, 1); // 1 = close, 0 = far
@@ -224,10 +201,7 @@ function animate() {
   window.mouse.speed *= 0.93; // Smooth out velocity
   requestAnimationFrame(animate);
 }
-
 animate();
-
 </script>
 </body>
-
 </html>
