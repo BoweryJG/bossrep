@@ -356,21 +356,29 @@ function animate() {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", childPath);
     path.setAttribute("fill", `url(#${childGradIds[i]})`);
-    // Fade out as dragTarget increases, much more slowly
-    const fadeStart = 40, fadeEnd = 340; // much wider range for slower fade
+    // Fade out as dragTarget increases, but trigger instant dissolve/appear
+    const fadeStart = 40, fadeEnd = 340;
     const fade = Math.min(1, Math.max(0, (fadeEnd - Math.abs(state.dragTarget)) / (fadeEnd - fadeStart)));
-    path.setAttribute("opacity", fade * 0.95);
-    childrenGroup.appendChild(path);
-    // Emit particles only once when orb is truly fully faded (very close to zero)
-    if (!state.dissolved && fade < 0.01) {
+    // Track last visible state
+    if (state.wasVisible === undefined) state.wasVisible = fade > 0.5;
+    // If orb just became invisible, emit dissolve particles and hide
+    if (state.wasVisible && fade < 0.05) {
       const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 3);
-      state.dissolved = true;
+      emitParticles(x, y, color, 9); // more particles for burst
+      path.setAttribute("opacity", 0);
+      state.wasVisible = false;
     }
-    // Reset dissolved flag only when orb is mostly reformed (fade > 0.8)
-    if (state.dissolved && fade > 0.8) {
-      state.dissolved = false;
+    // If orb just became visible, emit appear particles and show
+    else if (!state.wasVisible && fade > 0.05) {
+      const color = lerpColor(fam[0], fam[1], tcol);
+      emitParticles(x, y, color, 9);
+      path.setAttribute("opacity", fade * 0.95);
+      state.wasVisible = true;
+    } else {
+      // Normal fade
+      path.setAttribute("opacity", fade * 0.95);
     }
+    childrenGroup.appendChild(path);
   }
   // Animate and render particles
   animateParticles();
