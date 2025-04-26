@@ -309,6 +309,7 @@ function animate() {
   // --- Children ---
   // --- Render children orbs in correct z-order ---
   let behind = [], front = [];
+  const parentY = window.parentCenter.y;
   for (let i = 0; i < childCount; i++) {
     const state = orbStates[i + 1];
     // Animate gradient stops for each child
@@ -359,9 +360,8 @@ function animate() {
     const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
     // Store rendering info for later z-ordering
     const childInfo = {i, path: childPath, x, y, angle, cR};
-    // If angle is between -PI/2 and PI/2, it's in front
-    const normAngle = ((angle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI); // [0, 2PI)
-    if (normAngle > 3*Math.PI/2 || normAngle < Math.PI/2) {
+    // Use y-position to determine z-order: in front if y > parentY, behind if y < parentY
+    if (y > parentY) {
       front.push(childInfo);
     } else {
       behind.push(childInfo);
