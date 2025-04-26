@@ -161,7 +161,7 @@ function adjustSVGSize() {
   svg.setAttribute('height', vh);
   svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
   // Update parentCenter so it's always in the middle
-  window.parentCenterBase = {x: vw/2, y: vh/2};
+  window.parentCenter = {x: vw/2, y: vh/2};
   window.orbScale = scale;
 }
 adjustSVGSize();
