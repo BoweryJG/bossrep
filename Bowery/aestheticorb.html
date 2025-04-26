@@ -123,7 +123,16 @@ window.addEventListener('resize', adjustSVGSize);
 
 const parentOrb = document.getElementById('parentOrb');
 
-
+let lastWheelTime = 0;
+window.addEventListener('wheel', (e) => {
+  const now = performance.now();
+  const dt = Math.max(1, now - lastWheelTime);
+  lastWheelTime = now;
+  const velocity = Math.max(-80, Math.min(80, e.deltaY / dt * 120));
+  const angle = orbMorphDirection;
+  orbState.dragTarget += Math.sin(angle) * velocity * 1.8 + Math.cos(angle) * velocity * 0.7;
+  e.preventDefault();
+}, { passive: false });
 
 function approach(current, target, speed) {
   return current + (target - current) * speed;
