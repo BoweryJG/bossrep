@@ -182,11 +182,13 @@ function animate() {
   window.parentCenter = {x: px, y: py};
 
   const parentR = parentRadius + orbState.drag * 0.15;
-  const parentAmp = 1 + Math.abs(orbState.drag) * 0.008;
+  // Reduce amplitude for a more spherical look
+  const parentAmp = 0.45 + Math.abs(orbState.drag) * 0.005;
   const parentMorphT = now * 0.0004;
   const parentDx = Math.cos(orbMorphDirection) * orbState.drag;
   const parentDy = Math.sin(orbMorphDirection) * orbState.drag;
-  const parentPath = generateSuperSmoothBlob(px + parentDx, py + parentDy, parentR, 64, parentMorphT, parentAmp);
+  // Use more points for smoothness
+  const parentPath = generateSuperSmoothBlob(px + parentDx, py + parentDy, parentR, 80, parentMorphT, parentAmp);
   parentOrb.setAttribute('d', parentPath);
 
   requestAnimationFrame(animate);
