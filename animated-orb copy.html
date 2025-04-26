@@ -337,8 +337,9 @@ function animate() {
     let rawOrbit = (parentR + 60 + (i * 0.71 + 1.4) * maxChildOrbit / childCount) * (0.7 + 0.23 * orbitWobble);
     const orbitRadius = Math.max(rawOrbit, minOrbit);
     // Ellipticity: each child gets a unique ellipse
-    const ellipseA = orbitRadius * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
-    const ellipseB = orbitRadius * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
+    // Make the orbits more elliptical (spread out horizontally)
+    const ellipseA = orbitRadius * 1.5 * (0.97 + 0.07 * Math.sin(now * 0.00013 + i)); // wider horizontal
+    const ellipseB = orbitRadius * 0.7 * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2)); // narrower vertical
     // Angle: base + unique slow sine
     const angle = baseAngle + Math.sin(now * 0.00009 + i * 1.7) * 0.22;
     // Drag offset
