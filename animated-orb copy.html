@@ -444,6 +444,191 @@ function emitParticles(x, y, color, count = 3, i = 0, now = 0) {
   }
 }
 animate();
+// --- Theme Palettes ---
+const THEMES = {
+  cosmic: { base: 0, sat: 85, light: 60 },
+  pastel: { base: 200, sat: 50, light: 85 },
+  neon:   { base: 120, sat: 98, light: 65 },
+  dark:   { base: 260, sat: 60, light: 45 },
+};
+let currentTheme = 'cosmic', themeTarget = 'cosmic', themeLerp = 1;
+function setTheme(theme) { themeTarget = theme; themeLerp = 0; }
+
+// --- Color Ripple ---
+let colorRipplePhase = 0;
+
+// --- Orb Twinkle/Pulse State ---
+let orbPulse = [];
+let orbTwinkle = [];
+let orbMorphDramatic = [];
+let orbTrails = [];
+
+// --- Interactive ---
+function orbHitTest(mx, my) {
+  for (let i = 0; i < childOrbs.length; i++) {
+    const orb = childOrbs[i];
+    if (!orb) continue;
+    const bb = orb.getBBox();
+    if (mx >= bb.x && mx <= bb.x+bb.width && my >= bb.y && my <= bb.y+bb.height) return i;
+  }
+  return -1;
+}
+window.addEventListener('click', e => {
+  const svg = document.getElementById('orbSVG');
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const ctm = svg.getScreenCTM().inverse();
+  const {x, y} = pt.matrixTransform(ctm);
+  const idx = orbHitTest(x, y);
+  if (idx >= 0) {
+    orbTwinkle[idx+1] = 1.2;
+    emitParticles(orbStates[idx+1].x, orbStates[idx+1].y, '#fff', 16, idx, performance.now());
+  }
+});
+window.addEventListener('mousemove', e => {
+  const svg = document.getElementById('orbSVG');
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const ctm = svg.getScreenCTM().inverse();
+  const {x, y} = pt.matrixTransform(ctm);
+  const idx = orbHitTest(x, y);
+  for (let i = 0; i < childOrbs.length; i++) {
+    orbPulse[i+1] = (i === idx) ? 1 : orbPulse[i+1]*0.95;
+  }
+});
+
+// --- Theme Toggle UI ---
+const themeBtn = document.createElement('button');
+themeBtn.textContent = 'Toggle Theme';
+themeBtn.style.position = 'fixed';
+themeBtn.style.top = '16px';
+themeBtn.style.right = '16px';
+themeBtn.style.zIndex = 10;
+document.body.appendChild(themeBtn);
+themeBtn.onclick = () => {
+  const keys = Object.keys(THEMES);
+  const idx = (keys.indexOf(themeTarget)+1)%keys.length;
+  setTheme(keys[idx]);
+};
+
+// Patch getDynamicColorFamily for theme/ripple
+const oldGetDynamicColorFamily = getDynamicColorFamily;
+function getDynamicColorFamily(i, now) {
+  // Animate theme
+  if (themeLerp < 1) themeLerp = Math.min(1, themeLerp+0.02);
+  const from = THEMES[currentTheme], to = THEMES[themeTarget];
+  const base = lerp(from.base, to.base, themeLerp);
+  const sat = lerp(from.sat, to.sat, themeLerp);
+  const light = lerp(from.light, to.light, themeLerp);
+  if (themeLerp === 1) currentTheme = themeTarget;
+  // Color ripple
+  const ripple = Math.sin(colorRipplePhase + i*1.2);
+  const baseHue = (base + i * 67 + now * 0.018 + ripple*30) % 360;
+  const hue2 = (baseHue + 40 + 20 * Math.sin(now * 0.0007 + i)) % 360;
+  const light1 = light + 10 * Math.cos(now * 0.0004 + i * 2);
+  const light2 = light-25 + 15 * Math.sin(now * 0.0006 + i * 3);
+  return [hslToHex(baseHue, sat, light1), hslToHex(hue2, sat, light2)];
+}
+
+// Patch animate to add enhancements
+const oldAnimate = animate;
+animate = function() {
+  const now = performance.now();
+  colorRipplePhase += 0.012;
+
+  // --- Dramatic morphing ---
+  for (let i=0; i<=childCount; i++) {
+    if (Math.random()<0.001) orbMorphDramatic[i]=true;
+    if (orbMorphDramatic[i]) {
+      if (Math.random()<0.04) orbMorphDramatic[i]=false;
+    }
+  }
+
+  // --- Parent orb ---
+  const parentState = orbStates[0];
+  const parentMorphT = now * 0.0004;
+  const parentDrag = parentState.drag;
+  const parentAngle = orbMorphDirections[0];
+  const parentDx = Math.cos(parentAngle) * parentDrag;
+  const parentDy = Math.sin(parentAngle) * parentDrag;
+  const scale = window.orbScale || 1;
+
+  // Animate parent drift
+  const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
+  const px = window.parentCenterBase.x + Math.sin(now * 0.00011) * vw * 0.09 + Math.cos(now * 0.00007) * vw * 0.07;
+  const py = window.parentCenterBase.y + Math.cos(now * 0.00009) * vh * 0.08 + Math.sin(now * 0.00016) * vh * 0.06;
+  window.parentCenter = {x: px, y: py};
+
+  const parentR = (parentRadius + parentDrag * 0.15) * scale;
+  const parentAmp = (1 + Math.abs(parentDrag) * 0.008) * scale;
+  const parentPath = generateSuperSmoothBlob(px + parentDx * scale, py + parentDy * scale, parentR, 64, parentMorphT, parentAmp);
+  parentOrb.setAttribute('d', parentPath);
+
+  // --- Children ---
+  let behind = [], front = [];
+  const parentY = window.parentCenter.y;
+  childrenGroup.innerHTML = '';
+
+  // Init state arrays if needed
+  if (orbPulse.length !== childCount+1) orbPulse = Array(childCount+1).fill(0);
+  if (orbTwinkle.length !== childCount+1) orbTwinkle = Array(childCount+1).fill(0);
+  if (orbMorphDramatic.length !== childCount+1) orbMorphDramatic = Array(childCount+1).fill(false);
+  if (orbTrails.length !== childCount+1) orbTrails = Array(childCount+1).fill(null).map(()=>[]);
+  if (typeof childOrbs === 'undefined') window.childOrbs = [];
+
+  for (let i = 0; i < childCount; i++) {
+    const state = orbStates[i + 1];
+    // Animate dynamic color family for each orb
+    const fam = getDynamicColorFamily(i, now);
+    const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
+    document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
+    document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
+    // --- Twinkle/Pulse/Glow ---
+    let pulse = 1 + 0.07*Math.sin(now*0.002+i*0.7) + orbPulse[i+1]*0.12 + (Math.random()<0.002?orbTwinkle[i+1]=1.3:0);
+    if (orbTwinkle[i+1]>0) { pulse += orbTwinkle[i+1]*0.4; orbTwinkle[i+1]*=0.92; }
+    // --- Dramatic morph ---
+    let morphAmp = childAmp + Math.abs(state.drag) * 0.006;
+    if (orbMorphDramatic[i+1]) morphAmp *= 3.5;
+    // --- Particle Trails ---
+    if (Math.abs(state.dragTarget)<340-10) {
+      if (Math.random()<0.6) orbTrails[i+1].push({x:state.x,y:state.y,color:lerpColor(fam[0],fam[1],tcol),life:1});
+      if (orbTrails[i+1].length>24) orbTrails[i+1].shift();
+    }
+    // --- Animate/Render trails ---
+    for (const t of orbTrails[i+1]) {
+      t.life-=0.04;
+      if (t.life>0) {
+        const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circ.setAttribute("cx", t.x);
+        circ.setAttribute("cy", t.y);
+        circ.setAttribute("r", 6*t.life);
+        circ.setAttribute("fill", t.color);
+        circ.setAttribute("opacity", 0.13*t.life);
+        childrenGroup.appendChild(circ);
+      }
+    }
+    orbTrails[i+1]=orbTrails[i+1].filter(t=>t.life>0);
+    // --- Usual orb rendering (with pulse, morph, etc) ---
+    const cR = (childRadius + state.drag * 0.08) * pulse * (window.orbScale || 1);
+    const cAmp = morphAmp * (window.orbScale || 1);
+    const morphT = now * 0.0005 + i * 10;
+    const x = state.x || window.parentCenter.x;
+    const y = state.y || window.parentCenter.y;
+    const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", childPath);
+    path.setAttribute("fill", `url(#${childGradIds[i]})`);
+    path.setAttribute("opacity", fade * 0.95);
+    childrenGroup.appendChild(path);
+    // Store orb center for hit testing
+    state.x = x; state.y = y;
+    childOrbs[i] = path;
+  }
+  // Animate and render particles
+  animateParticles();
+  requestAnimationFrame(animate);
+};
+
 </script>
 </body>
 </html>
