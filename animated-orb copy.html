@@ -361,10 +361,18 @@ function animate() {
     const fade = Math.min(1, Math.max(0, (fadeEnd - Math.abs(state.dragTarget)) / (fadeEnd - fadeStart)));
     // Track last visible state
     if (state.wasVisible === undefined) state.wasVisible = fade > 0.5;
-    // If orb just became invisible, emit dissolve particles and hide
-    if (state.wasVisible && fade < 0.05) {
+    // Start dissolving into particles as soon as fade < 0.5
+    if (fade < 0.5 && fade > 0.05) {
       const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 9); // more particles for burst
+      // Emit more particles as fade approaches zero
+      const emission = Math.ceil((0.5 - fade) * 12); // up to 6 particles per frame
+      emitParticles(x, y, color, emission);
+      path.setAttribute("opacity", fade * 0.95);
+    }
+    // If orb just became invisible, emit a final burst and hide
+    else if (state.wasVisible && fade <= 0.05) {
+      const color = lerpColor(fam[0], fam[1], tcol);
+      emitParticles(x, y, color, 12); // big burst
       path.setAttribute("opacity", 0);
       state.wasVisible = false;
     }
