@@ -30,14 +30,14 @@
 
   <defs>
     <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
-      <stop id="p0" offset="0%" stop-color="#e6f7fd"/>
-      <stop id="p1" offset="18%" stop-color="#b0e1fc"/>
-      <stop id="p2" offset="36%" stop-color="#a2d7f2"/>
-      <stop id="p3" offset="54%" stop-color="#d2c7fd"/>
-      <stop id="p4" offset="68%" stop-color="#c5f3f7"/>
-      <stop id="p5" offset="80%" stop-color="#f8fafc"/>
-      <stop id="p6" offset="90%" stop-color="#fffbe7"/>
-      <stop id="p7" offset="100%" stop-color="#a3ffd6"/>
+      <stop id="p0" offset="0%" stop-color="#0f3d91"/>
+      <stop id="p1" offset="18%" stop-color="#1e6bb8"/>
+      <stop id="p2" offset="36%" stop-color="#2ec4b6"/>
+      <stop id="p3" offset="54%" stop-color="#3a86ff"/>
+      <stop id="p4" offset="68%" stop-color="#5f0a87"/>
+      <stop id="p5" offset="80%" stop-color="#6a0572"/>
+      <stop id="p6" offset="90%" stop-color="#2d1e6b"/>
+      <stop id="p7" offset="100%" stop-color="#0b2545"/>
     </radialGradient>
   </defs>
   <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95" />
@@ -133,14 +133,14 @@ function animate() {
 
   // Animate radiant, shifting dental color stops
   const stops = [
-    {id:'p0', base:'#e6f7fd', alt:'#b0e1fc'}, // pearl blue
-    {id:'p1', base:'#b0e1fc', alt:'#a2d7f2'}, // aqua to blue
-    {id:'p2', base:'#a2d7f2', alt:'#d2c7fd'}, // blue to violet
-    {id:'p3', base:'#d2c7fd', alt:'#c5f3f7'}, // violet to mint
-    {id:'p4', base:'#c5f3f7', alt:'#f8fafc'}, // mint to white
-    {id:'p5', base:'#f8fafc', alt:'#fffbe7'}, // white to gold
-    {id:'p6', base:'#fffbe7', alt:'#a3ffd6'}, // gold to radiant mint
-    {id:'p7', base:'#a3ffd6', alt:'#e6f7fd'}  // mint to pearl
+    {id:'p0', base:'#0f3d91', alt:'#1e6bb8'}, // deep blue to aqua
+    {id:'p1', base:'#1e6bb8', alt:'#2ec4b6'}, // aqua to teal
+    {id:'p2', base:'#2ec4b6', alt:'#3a86ff'}, // teal to blue
+    {id:'p3', base:'#3a86ff', alt:'#5f0a87'}, // blue to violet
+    {id:'p4', base:'#5f0a87', alt:'#6a0572'}, // violet to magenta
+    {id:'p5', base:'#6a0572', alt:'#2d1e6b'}, // magenta to deep indigo
+    {id:'p6', base:'#2d1e6b', alt:'#0b2545'}, // indigo to navy
+    {id:'p7', base:'#0b2545', alt:'#0f3d91'}  // navy to deep blue
   ];
   for (let i = 0; i < stops.length; i++) {
     // Award-winning, organic, radiant color shifting
