@@ -236,13 +236,8 @@ function animate() {
   const parentDx = Math.cos(parentAngle) * parentState.drag;
   const parentDy = Math.sin(parentAngle) * parentState.drag;
   const parentPath = generateSuperSmoothBlob(px + parentDx * (window.orbScale || 1), py + parentDy * (window.orbScale || 1), parentR, 64, parentMorphT, parentAmp);
-  const parentAmp = (1 + Math.abs(parentDrag) * 0.008) * scale;
-  const parentPath = generateSuperSmoothBlob(px + parentDx * scale, py + parentDy * scale, parentR, 64, parentMorphT, parentAmp);
   parentOrb.setAttribute('d', parentPath);
 
-  // Animate parent orb state
-  const spring = 0.045 * (1 + orbMorphSpeeds[0]); // lower = slower
-  const damping = 0.90 - orbMorphSpeeds[0] * 0.33; // higher = longer wobble
   [parentState.drag, parentState.dragV] = dampedSpring(parentState.drag, parentState.dragTarget, parentState.dragV, spring, damping);
   // Wobble on release (slower phase for more dissolution)
   if (Math.abs(parentState.dragTarget) < 0.1 && Math.abs(parentState.drag) > 0.1) {
