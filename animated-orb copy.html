@@ -1,436 +1,4 @@
-<!--
-  GOLDEN COPY: This is the reference working version with vibrant, morphing orbs and enhanced gradients.
-  Last confirmed working: 2025-04-26
-  Do not overwrite unless you want to change the golden state!
--->
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Animated Orbs - Minimal Working Version</title>
-  <style>
-    body {
-      background: #0B0B20;
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    svg {
-      width: 100vw;
-      height: 100vh;
-      display: block;
-      background: #0B0B20;
-      position: fixed;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      touch-action: none;
-    }
-  </style>
-</head>
-<body>
-<svg id="orbSVG">
-  <defs>
-    <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
-      <stop id="p0" offset="0%" stop-color="#00E5FF"/>
-      <stop id="p1" offset="100%" stop-color="#5B3CFF"/>
-      <stop id="p2" offset="50%" stop-color="#00E5FF"/>
-      <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
-    </radialGradient>
-    <radialGradient id="childGrad0" cx="50%" cy="50%" r="70%">
-      <stop id="c0s0" offset="0%" stop-color="#B3D8FF"/>
-      <stop id="c0s1" offset="100%" stop-color="#0A192F"/>
-    </radialGradient>
-    <radialGradient id="childGrad1" cx="50%" cy="50%" r="70%">
-      <stop id="c1s0" offset="0%" stop-color="#C6FFD9"/>
-      <stop id="c1s1" offset="100%" stop-color="#145A32"/>
-    </radialGradient>
-    <radialGradient id="childGrad2" cx="50%" cy="50%" r="70%">
-      <stop id="c2s0" offset="0%" stop-color="#FFB3C9"/>
-      <stop id="c2s1" offset="100%" stop-color="#7B1F3A"/>
-    </radialGradient>
-    <radialGradient id="childGrad3" cx="50%" cy="50%" r="70%">
-      <stop id="c3s0" offset="0%" stop-color="#E0D1FF"/>
-      <stop id="c3s1" offset="100%" stop-color="#311B4F"/>
-    </radialGradient>
-    <radialGradient id="childGrad4" cx="50%" cy="50%" r="70%">
-      <stop id="c4s0" offset="0%" stop-color="#FFF5B3"/>
-      <stop id="c4s1" offset="100%" stop-color="#4B3800"/>
-    </radialGradient>
-  </defs>
-  <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95"/>
-  <g id="children"></g>
-</svg>
-<script>
-// --- Utility functions ---
-function lerp(a, b, t) { return a + (b - a) * t; }
-function hslToHex(h, s, l) {
-  h /= 360; s /= 100; l /= 100;
-  let r, g, b;
-  if (s === 0) { r = g = b = l; }
-  else {
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
-  }
-  const toHex = x => {
-    const hex = Math.round(x * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-function lerpColor(a, b, t) {
-  // Accepts hex colors
-  function hexToRgb(hex) {
-    hex = hex.replace('#','');
-    if (hex.length === 3) hex = hex.split('').map(x=>x+x).join('');
-    const num = parseInt(hex, 16);
-    return [num>>16&255, num>>8&255, num&255];
-  }
-  function rgbToHex([r,g,b]) {
-    return `#${[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('')}`;
-  }
-  const c1 = hexToRgb(a), c2 = hexToRgb(b);
-  return rgbToHex([0,1,2].map(i=>Math.round(lerp(c1[i],c2[i],t))));
-}
-function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
-  // Generates a super-smooth organic blob path
-  const p = [];
-  for (let i = 0; i < points; i++) {
-    const ang = (i / points) * 2 * Math.PI;
-    const noise = Math.sin(t + i*1.3 + phase) * amp * r * 0.09;
-    const x = cx + Math.cos(ang) * (r + noise);
-    const y = cy + Math.sin(ang) * (r + noise);
-    p.push([x, y]);
-  }
-  let d = '';
-  for (let i = 0; i < p.length; i++) {
-    const [x, y] = p[i];
-    d += i === 0 ? `M${x},${y}` : `Q${p[(i-1+p.length)%p.length][0]},${p[(i-1+p.length)%p.length][1]},${x},${y}`;
-  }
-  d += 'Z';
-  return d;
-}
-
-window.onload = function() {
-  const childCount = 5;
-  const colorFamilies = [
-    ["#B3D8FF", "#0A192F"],
-    ["#C6FFD9", "#145A32"],
-    ["#FFB3C9", "#7B1F3A"],
-    ["#E0D1FF", "#311B4F"],
-    ["#FFF5B3", "#4B3800"]
-  ];
-  const parentRadius = 80;
-  const childRadius = 32;
-  const childAmp = 0.45;
-  const childPoints = 32;
-
-  const parentOrb = document.getElementById('parentOrb');
-  const childrenGroup = document.getElementById('children');
-  const childOrbs = [];
-  for (let i = 0; i < childCount; i++) {
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("fill", `url(#childGrad${i})`);
-    path.setAttribute("opacity", "0.95");
-    childrenGroup.appendChild(path);
-    childOrbs.push(path);
-  }
-
-  // Center point
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  window.parentCenterBase = {x: vw/2, y: vh/2};
-  window.parentCenter = {...window.parentCenterBase};
-  window.viewportSize = {vw, vh};
-  window.orbScale = 1;
-
-  function animate() {
-    const now = performance.now();
-    // Animate parent gradient
-    const parentStops = [
-      { id: "p0", phase: 0 },
-      { id: "p1", phase: Math.PI * 0.5 },
-      { id: "p2", phase: Math.PI },
-      { id: "p3", phase: Math.PI * 1.5 }
-    ];
-    const baseHue = (now * 0.01) % 360;
-    for (let i = 0; i < parentStops.length; i++) {
-      const stop = parentStops[i];
-      const hue = (baseHue + 60 * Math.sin(now * 0.00015 + stop.phase)) % 360;
-      const sat = 80 + 10 * Math.sin(now * 0.0002 + stop.phase);
-      const light = 60 + 10 * Math.cos(now * 0.00018 + stop.phase);
-      document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
-    }
-
-    // Animate parent orb position
-    const px = window.parentCenterBase.x + Math.sin(now * 0.00011) * vw * 0.09 + Math.cos(now * 0.00007) * vw * 0.07;
-    const py = window.parentCenterBase.y + Math.cos(now * 0.00009) * vh * 0.08 + Math.sin(now * 0.00016) * vh * 0.06;
-    window.parentCenter = {x: px, y: py};
-
-    // Morph parent orb
-    const parentR = parentRadius * window.orbScale;
-    const parentAmp = 1 * window.orbScale;
-    const parentMorphT = now * 0.0004;
-    const parentPath = generateSuperSmoothBlob(px, py, parentR, 64, parentMorphT, parentAmp);
-    parentOrb.setAttribute('d', parentPath);
-
-    // Animate children
-    for (let i = 0; i < childCount; i++) {
-      // Animate color gradient
-      const fam = colorFamilies[i];
-      const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
-      document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
-      document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
-      // Animate orbit
-      const baseAngle = (now * 0.00022 + i * (2 * Math.PI / childCount));
-      const orbitWobble = Math.sin(now * (0.00012 + 0.00007 * i) + i * 1.13) * 0.18 + Math.cos(now * (0.00012 + 0.00007 * i) * 0.7) * 0.09;
-      const orbitRadius = parentR + 60 + (i * 0.71 + 1.4) * 120 / childCount * (0.7 + 0.23 * orbitWobble);
-      const ellipseA = orbitRadius * 1.3 * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
-      const ellipseB = orbitRadius * 1.1 * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
-      const angle = baseAngle + Math.sin(now * 0.00009 + i * 1.7) * 0.22;
-      const x = px + Math.cos(angle) * ellipseA;
-      const y = py + Math.sin(angle) * ellipseB;
-      const cR = childRadius * window.orbScale;
-      const cAmp = childAmp * window.orbScale;
-      const morphT = now * 0.0005 + i * 10;
-      const childPath = generateSuperSmoothBlob(x, y, cR, childPoints, morphT, cAmp, i);
-      childOrbs[i].setAttribute("d", childPath);
-    }
-    requestAnimationFrame(animate);
-  }
-  animate();
-};
-</script>
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Animated Orbs - Minimal Working Version</title>
-  <style>
-    body {
-      background: #0B0B20;
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    svg {
-      width: 100vw;
-      height: 100vh;
-      display: block;
-      background: #0B0B20;
-      position: fixed;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      touch-action: none;
-    }
-  </style>
-</head>
-<body>
-<svg id="orbSVG">
-  <defs>
-    <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
-      <stop id="p0" offset="0%" stop-color="#00E5FF"/>
-      <stop id="p1" offset="100%" stop-color="#5B3CFF"/>
-      <stop id="p2" offset="50%" stop-color="#00E5FF"/>
-      <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
-    </radialGradient>
-    <radialGradient id="childGrad0" cx="50%" cy="50%" r="70%">
-      <stop id="c0s0" offset="0%" stop-color="#B3D8FF"/>
-      <stop id="c0s1" offset="100%" stop-color="#0A192F"/>
-    </radialGradient>
-    <radialGradient id="childGrad1" cx="50%" cy="50%" r="70%">
-      <stop id="c1s0" offset="0%" stop-color="#C6FFD9"/>
-      <stop id="c1s1" offset="100%" stop-color="#145A32"/>
-    </radialGradient>
-    <radialGradient id="childGrad2" cx="50%" cy="50%" r="70%">
-      <stop id="c2s0" offset="0%" stop-color="#FFB3C9"/>
-      <stop id="c2s1" offset="100%" stop-color="#7B1F3A"/>
-    </radialGradient>
-    <radialGradient id="childGrad3" cx="50%" cy="50%" r="70%">
-      <stop id="c3s0" offset="0%" stop-color="#E0D1FF"/>
-      <stop id="c3s1" offset="100%" stop-color="#311B4F"/>
-    </radialGradient>
-    <radialGradient id="childGrad4" cx="50%" cy="50%" r="70%">
-      <stop id="c4s0" offset="0%" stop-color="#FFF5B3"/>
-      <stop id="c4s1" offset="100%" stop-color="#4B3800"/>
-    </radialGradient>
-  </defs>
-  <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95"/>
-  <g id="children"></g>
-</svg>
-<script>
-// --- Utility functions ---
-function lerp(a, b, t) { return a + (b - a) * t; }
-function hslToHex(h, s, l) {
-  h /= 360; s /= 100; l /= 100;
-  let r, g, b;
-  if (s === 0) { r = g = b = l; }
-  else {
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
-  }
-  const toHex = x => {
-    const hex = Math.round(x * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-function lerpColor(a, b, t) {
-  // Accepts hex colors
-  function hexToRgb(hex) {
-    hex = hex.replace('#','');
-    if (hex.length === 3) hex = hex.split('').map(x=>x+x).join('');
-    const num = parseInt(hex, 16);
-    return [num>>16&255, num>>8&255, num&255];
-  }
-  function rgbToHex([r,g,b]) {
-    return `#${[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('')}`;
-  }
-  const c1 = hexToRgb(a), c2 = hexToRgb(b);
-  return rgbToHex([0,1,2].map(i=>Math.round(lerp(c1[i],c2[i],t))));
-}
-function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
-  // Generates a super-smooth organic blob path
-  const p = [];
-  for (let i = 0; i < points; i++) {
-    const ang = (i / points) * 2 * Math.PI;
-    const noise = Math.sin(t + i*1.3 + phase) * amp * r * 0.09;
-    const x = cx + Math.cos(ang) * (r + noise);
-    const y = cy + Math.sin(ang) * (r + noise);
-    p.push([x, y]);
-  }
-  let d = '';
-  for (let i = 0; i < p.length; i++) {
-    const [x, y] = p[i];
-    d += i === 0 ? `M${x},${y}` : `Q${p[(i-1+p.length)%p.length][0]},${p[(i-1+p.length)%p.length][1]},${x},${y}`;
-  }
-  d += 'Z';
-  return d;
-}
-
-window.onload = function() {
-  const childCount = 5;
-  const colorFamilies = [
-    ["#B3D8FF", "#0A192F"],
-    ["#C6FFD9", "#145A32"],
-    ["#FFB3C9", "#7B1F3A"],
-    ["#E0D1FF", "#311B4F"],
-    ["#FFF5B3", "#4B3800"]
-  ];
-  const parentRadius = 80;
-  const childRadius = 32;
-  const childAmp = 0.45;
-  const childPoints = 32;
-
-  const parentOrb = document.getElementById('parentOrb');
-  const childrenGroup = document.getElementById('children');
-  const childOrbs = [];
-  for (let i = 0; i < childCount; i++) {
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("fill", `url(#childGrad${i})`);
-    path.setAttribute("opacity", "0.95");
-    childrenGroup.appendChild(path);
-    childOrbs.push(path);
-  }
-
-  // Center point
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  window.parentCenterBase = {x: vw/2, y: vh/2};
-  window.parentCenter = {...window.parentCenterBase};
-  window.viewportSize = {vw, vh};
-  window.orbScale = 1;
-
-  function animate() {
-    const now = performance.now();
-    // Animate parent gradient
-    const parentStops = [
-      { id: "p0", phase: 0 },
-      { id: "p1", phase: Math.PI * 0.5 },
-      { id: "p2", phase: Math.PI },
-      { id: "p3", phase: Math.PI * 1.5 }
-    ];
-    const baseHue = (now * 0.01) % 360;
-    for (let i = 0; i < parentStops.length; i++) {
-      const stop = parentStops[i];
-      const hue = (baseHue + 60 * Math.sin(now * 0.00015 + stop.phase)) % 360;
-      const sat = 80 + 10 * Math.sin(now * 0.0002 + stop.phase);
-      const light = 60 + 10 * Math.cos(now * 0.00018 + stop.phase);
-      document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
-    }
-
-    // Animate parent orb position
-    const px = window.parentCenterBase.x + Math.sin(now * 0.00011) * vw * 0.09 + Math.cos(now * 0.00007) * vw * 0.07;
-    const py = window.parentCenterBase.y + Math.cos(now * 0.00009) * vh * 0.08 + Math.sin(now * 0.00016) * vh * 0.06;
-    window.parentCenter = {x: px, y: py};
-
-    // Morph parent orb
-    const parentR = parentRadius * window.orbScale;
-    const parentAmp = 1 * window.orbScale;
-    const parentMorphT = now * 0.0004;
-    const parentPath = generateSuperSmoothBlob(px, py, parentR, 64, parentMorphT, parentAmp);
-    parentOrb.setAttribute('d', parentPath);
-
-    // Animate children
-    for (let i = 0; i < childCount; i++) {
-      // Animate color gradient
-      const fam = colorFamilies[i];
-      const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
-      document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
-      document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
-      // Animate orbit
-      const baseAngle = (now * 0.00022 + i * (2 * Math.PI / childCount));
-      const orbitWobble = Math.sin(now * (0.00012 + 0.00007 * i) + i * 1.13) * 0.18 + Math.cos(now * (0.00012 + 0.00007 * i) * 0.7) * 0.09;
-      const orbitRadius = parentR + 60 + (i * 0.71 + 1.4) * 120 / childCount * (0.7 + 0.23 * orbitWobble);
-      const ellipseA = orbitRadius * 1.3 * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
-      const ellipseB = orbitRadius * 1.1 * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
-      const angle = baseAngle + Math.sin(now * 0.00009 + i * 1.7) * 0.22;
-      const x = px + Math.cos(angle) * ellipseA;
-      const y = py + Math.sin(angle) * ellipseB;
-      const cR = childRadius * window.orbScale;
-      const cAmp = childAmp * window.orbScale;
-      const morphT = now * 0.0005 + i * 10;
-      const childPath = generateSuperSmoothBlob(x, y, cR, childPoints, morphT, cAmp, i);
-      childOrbs[i].setAttribute("d", childPath);
-    }
-    requestAnimationFrame(animate);
-  }
-  animate();
-};
-</script>
-</body>
-</html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -557,16 +125,17 @@ function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   return d;
 }
 
-
 const childCount = 5;
-const colorFamilies = [
-  ["#B3D8FF", "#0A192F"],
-  ["#C6FFD9", "#145A32"],
-  ["#FFB3C9", "#7B1F3A"],
-  ["#E0D1FF", "#311B4F"],
-  ["#FFF5B3", "#4B3800"]
-];
-
+// --- Dynamic Color Families ---
+function getDynamicColorFamily(i, now) {
+  // Each orb gets a unique base hue, animated over time
+  const baseHue = (i * 67 + now * 0.018) % 360;
+  const hue2 = (baseHue + 40 + 20 * Math.sin(now * 0.0007 + i)) % 360;
+  const sat = 80 + 10 * Math.sin(now * 0.0005 + i);
+  const light1 = 60 + 10 * Math.cos(now * 0.0004 + i * 2);
+  const light2 = 35 + 15 * Math.sin(now * 0.0006 + i * 3);
+  return [hslToHex(baseHue, sat, light1), hslToHex(hue2, sat, light2)];
+}
 // parentCenter will be set dynamically below
 const parentRadius = 100;
 const childRadius = 36;
@@ -746,10 +315,10 @@ function animate() {
   let behind = [], front = [];
   const parentY = window.parentCenter.y;
   childrenGroup.innerHTML = '';
-
   for (let i = 0; i < childCount; i++) {
-    // Animate static color family for each orb
-    const fam = colorFamilies[i];
+    const state = orbStates[i + 1];
+    // Animate dynamic color family for each orb
+    const fam = getDynamicColorFamily(i, now);
     const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
     document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
     document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
@@ -759,7 +328,7 @@ function animate() {
     const baseAngle = (now * 0.00022 + i * (2 * Math.PI / childCount));
     // Orbit radius breathes and wobbles independently
     const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-    const parentR = (parentRadius) * (window.orbScale || 1);
+    const parentR = (parentRadius + state.drag * 0.15) * (window.orbScale || 1);
     // Max allowed: from edge of parent to edge of screen
     const minEdge = Math.min(
       window.parentCenter.x,
@@ -777,148 +346,103 @@ function animate() {
     const ellipseA = orbitRadius * 1.3 * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
     const ellipseB = orbitRadius * 1.1 * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
     const angle = baseAngle + Math.sin(now * 0.00009 + i * 1.7) * 0.22;
-    const x = window.parentCenter.x + Math.cos(angle) * ellipseA;
-    const y = window.parentCenter.y + Math.sin(angle) * ellipseB;
+    const dragAngle = orbMorphDirections[i + 1];
+    const dx = Math.cos(dragAngle) * state.drag;
+    const dy = Math.sin(dragAngle) * state.drag;
+    const x = window.parentCenter.x + Math.cos(angle) * ellipseA + dx;
+    const y = window.parentCenter.y + Math.sin(angle) * ellipseB + dy;
     const scale = window.orbScale || 1;
-    const cR = (childRadius) * scale;
-    const cAmp = (childAmp) * scale;
+    const cR = (childRadius + state.drag * 0.08) * scale;
+    const cAmp = (childAmp + Math.abs(state.drag) * 0.006) * scale;
     const morphT = now * 0.0005 + i * 10;
-    const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
-    childOrbs[i].setAttribute("d", childPath);
-  }
-  requestAnimationFrame(animate);
-}
-
-// --- Interactive ---
-function orbHitTest(mx, my) {
-  for (let i = 0; i < childOrbs.length; i++) {
-    const orb = childOrbs[i];
-    if (!orb) continue;
-    const bb = orb.getBBox();
-    if (mx >= bb.x && mx <= bb.x+bb.width && my >= bb.y && my <= bb.y+bb.height) return i;
-  }
-  return -1;
-}
-
-
-// --- Theme Toggle UI ---
-const themeBtn = document.createElement('button');
-themeBtn.textContent = 'Toggle Theme';
-themeBtn.style.position = 'fixed';
-themeBtn.style.top = '16px';
-themeBtn.style.right = '16px';
-themeBtn.style.zIndex = 10;
-document.body.appendChild(themeBtn);
-themeBtn.onclick = () => {
-  const keys = Object.keys(THEMES);
-  const idx = (keys.indexOf(themeTarget)+1)%keys.length;
-  setTheme(keys[idx]);
-};
-
-
-
-// Patch animate to add enhancements
-const oldAnimate = animate;
-animate = function() {
-  const now = performance.now();
-  colorRipplePhase += 0.012;
-
-  // --- Dramatic morphing ---
-  for (let i=0; i<=childCount; i++) {
-    if (Math.random()<0.001) orbMorphDramatic[i]=true;
-    if (orbMorphDramatic[i]) {
-      if (Math.random()<0.04) orbMorphDramatic[i]=false;
-    }
-  }
-
-  // --- Parent orb ---
-  const parentState = orbStates[0];
-  const parentMorphT = now * 0.0004;
-  const parentDrag = parentState.drag;
-  const parentAngle = orbMorphDirections[0];
-  const parentDx = Math.cos(parentAngle) * parentDrag;
-  const parentDy = Math.sin(parentAngle) * parentDrag;
-  const scale = window.orbScale || 1;
-
-  // Animate parent drift
-  const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-  const px = window.parentCenterBase.x + Math.sin(now * 0.00011) * vw * 0.09 + Math.cos(now * 0.00007) * vw * 0.07;
-  const py = window.parentCenterBase.y + Math.cos(now * 0.00009) * vh * 0.08 + Math.sin(now * 0.00016) * vh * 0.06;
-  window.parentCenter = {x: px, y: py};
-
-  const parentR = (parentRadius + parentDrag * 0.15) * scale;
-  const parentAmp = (1 + Math.abs(parentDrag) * 0.008) * scale;
-  const parentPath = generateSuperSmoothBlob(px + parentDx * scale, py + parentDy * scale, parentR, 64, parentMorphT, parentAmp);
-  parentOrb.setAttribute('d', parentPath);
-
-  // --- Children ---
-  let behind = [], front = [];
-  const parentY = window.parentCenter.y;
-  childrenGroup.innerHTML = '';
-
-  // Init state arrays if needed
-  if (orbPulse.length !== childCount+1) orbPulse = Array(childCount+1).fill(0);
-  if (orbTwinkle.length !== childCount+1) orbTwinkle = Array(childCount+1).fill(0);
-  if (orbMorphDramatic.length !== childCount+1) orbMorphDramatic = Array(childCount+1).fill(false);
-  if (orbTrails.length !== childCount+1) orbTrails = Array(childCount+1).fill(null).map(()=>[]);
-  if (typeof childOrbs === 'undefined') window.childOrbs = [];
-
-  for (let i = 0; i < childCount; i++) {
-    const state = orbStates[i + 1];
-    // Animate dynamic color family for each orb
-    const fam = getDynamicColorFamily(i, now);
-    const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
-    document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
-    document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
-    // --- Twinkle/Pulse/Glow ---
-    let pulse = 1 + 0.07*Math.sin(now*0.002+i*0.7) + orbPulse[i+1]*0.12 + (Math.random()<0.002?orbTwinkle[i+1]=1.3:0);
-    if (orbTwinkle[i+1]>0) { pulse += orbTwinkle[i+1]*0.4; orbTwinkle[i+1]*=0.92; }
-    // --- Dramatic morph ---
-    let morphAmp = childAmp + Math.abs(state.drag) * 0.006;
-    if (orbMorphDramatic[i+1]) morphAmp *= 3.5;
-    // --- Particle Trails ---
-    if (Math.abs(state.dragTarget)<340-10) {
-      if (Math.random()<0.6) orbTrails[i+1].push({x:state.x,y:state.y,color:lerpColor(fam[0],fam[1],tcol),life:1});
-      if (orbTrails[i+1].length>24) orbTrails[i+1].shift();
-    }
-    // --- Animate/Render trails ---
-    for (const t of orbTrails[i+1]) {
-      t.life-=0.04;
-      if (t.life>0) {
-        const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circ.setAttribute("cx", t.x);
-        circ.setAttribute("cy", t.y);
-        circ.setAttribute("r", 6*t.life);
-        circ.setAttribute("fill", t.color);
-        circ.setAttribute("opacity", 0.13*t.life);
-        childrenGroup.appendChild(circ);
-      }
-    }
-    orbTrails[i+1]=orbTrails[i+1].filter(t=>t.life>0);
-    // --- Usual orb rendering (with pulse, morph, etc) ---
-    const cR = (childRadius + state.drag * 0.08) * pulse * (window.orbScale || 1);
-    const cAmp = morphAmp * (window.orbScale || 1);
-    const morphT = now * 0.0005 + i * 10;
-    const x = state.x || window.parentCenter.x;
-    const y = state.y || window.parentCenter.y;
     const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", childPath);
     path.setAttribute("fill", `url(#${childGradIds[i]})`);
-    // Recompute fade in this scope if not available
+    // Fade out as dragTarget increases, but trigger instant dissolve/appear
     const fadeStart = 40, fadeEnd = 340;
     const fade = Math.min(1, Math.max(0, (fadeEnd - Math.abs(state.dragTarget)) / (fadeEnd - fadeStart)));
-    path.setAttribute("opacity", fade * 0.95);
+    // Track last visible state
+    if (state.wasVisible === undefined) state.wasVisible = fade > 0.5;
+    // Start dissolving into particles as soon as fade < 0.5
+    if (fade < 0.5 && fade > 0.05) {
+      const color = lerpColor(fam[0], fam[1], tcol);
+      // Emit more particles as fade approaches zero
+      const emission = Math.ceil((0.5 - fade) * 12); // up to 6 particles per frame
+      emitParticles(x, y, color, emission, i, now);
+      path.setAttribute("opacity", fade * 0.95);
+    }
+    // If orb just became invisible, emit a final burst and hide
+    else if (state.wasVisible && fade <= 0.05) {
+      const color = lerpColor(fam[0], fam[1], tcol);
+      emitParticles(x, y, color, 12, i, now); // big burst
+      path.setAttribute("opacity", 0);
+      state.wasVisible = false;
+    }
+    // If orb just became visible, emit appear particles and show
+    else if (!state.wasVisible && fade > 0.05) {
+      const color = lerpColor(fam[0], fam[1], tcol);
+      emitParticles(x, y, color, 9, i, now);
+      path.setAttribute("opacity", fade * 0.95);
+      state.wasVisible = true;
+    } else {
+      // Normal fade
+      path.setAttribute("opacity", fade * 0.95);
+    }
     childrenGroup.appendChild(path);
-    // Store orb center for hit testing
-    state.x = x; state.y = y;
-    childOrbs[i] = path;
   }
   // Animate and render particles
   animateParticles();
   requestAnimationFrame(animate);
-};
+}
+// --- Cosmic particle system ---
+const particlesGroup = document.getElementById('particles');
+let particles = [];
 
+function animateParticles() {
+  // Update and render particles
+  particles = particles.filter(p => p.life > 0);
+  particlesGroup.innerHTML = '';
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.98;
+    p.vy *= 0.98;
+    p.life -= p.decay;
+    p.opacity = Math.max(0, p.life);
+    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circ.setAttribute("cx", p.x);
+    circ.setAttribute("cy", p.y);
+    circ.setAttribute("r", p.r * p.opacity);
+    circ.setAttribute("fill", p.color);
+    circ.setAttribute("opacity", p.opacity * 0.7);
+    particlesGroup.appendChild(circ);
+  }
+}
+
+function emitParticles(x, y, color, count = 3, i = 0, now = 0) {
+  for (let j = 0; j < count; j++) {
+    // Add a sparkle: random hue offset
+    let h = (i * 67 + now * 0.018) % 360 + (Math.random() - 0.5) * 24; // sparkle
+    let s = 85 + Math.random() * 10;
+    let l = 55 + Math.random() * 20;
+    const particleColor = hslToHex(h, s, l);
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = 0.4 + Math.random() * 0.7; // slower
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    particles.push({
+      x, y,
+      vx, vy,
+      r: 1.1 + Math.random() * 1.2, // much smaller
+      life: 0.6, // fades faster
+      decay: 0.025 + Math.random() * 0.015, // fades faster
+      color: particleColor,
+      opacity: 0.45 // more subtle
+    });
+  }
+}
+animate();
 </script>
 </body>
 </html>
