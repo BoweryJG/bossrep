@@ -29,67 +29,37 @@
 <svg id="orbSVG" style="display:block; margin:auto; position:absolute; left:50%; top:48px; transform:translateX(-50%);">
 
   <defs>
-    <!-- Enhanced turbulence with blur for seamless edges -->
-    <filter id="turbulence" x="-50%" y="-50%" width="200%" height="200%">
-      <feTurbulence id="turbulenceFilter" type="fractalNoise" baseFrequency="0.01 0.01" numOctaves="2" seed="1" />
-      <feDisplacementMap in="SourceGraphic" scale="15" />
-      <feGaussianBlur stdDeviation="2" />
-      <feComposite in="SourceGraphic" operator="atop" />
+    <!-- Single unified filter for beautiful, cohesive edges -->
+    <filter id="unifiedOrbFilter" x="-50%" y="-50%" width="200%" height="200%">
+      <!-- Subtle turbulence for internal texture -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.01 0.01" numOctaves="2" seed="1" result="turbulence" />
+      <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="5" result="displaced" />
+      
+      <!-- Glow for beautiful edge treatment -->
+      <feGaussianBlur in="displaced" stdDeviation="3" result="blur" />
+      <feComposite in="displaced" in2="blur" operator="over" result="softEdges" />
+      
+      <!-- Color adjustments for richness -->
+      <feColorMatrix in="softEdges" type="matrix" 
+                   values="1.1 0 0 0 0
+                           0 1.1 0 0 0
+                           0 0 1.2 0 0
+                           0 0 0 1 0" result="colorEnhanced" />
     </filter>
     
-    <!-- Glow filter for seamless edges -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-    
-    <!-- Blend filter for organic transitions -->
-    <filter id="organicBlend">
-      <feGaussianBlur stdDeviation="3" />
-      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" />
-    </filter>
-    
-    <!-- Multiple gradients that will be animated and blended -->
-    <radialGradient id="parentGrad1" cx="50%" cy="50%" r="70%">
-      <stop id="p1a" offset="0%" stop-color="#0f3d91"/>
-      <stop id="p1b" offset="40%" stop-color="#1e6bb8"/>
-      <stop id="p1c" offset="70%" stop-color="#2ec4b6"/>
-      <stop id="p1d" offset="100%" stop-color="#3a86ff"/>
+    <!-- Single beautiful gradient with dental colors -->
+    <radialGradient id="unifiedGradient" cx="50%" cy="50%" r="70%">
+      <stop id="g1" offset="0%" stop-color="#0f3d91"/>
+      <stop id="g2" offset="35%" stop-color="#1e6bb8"/>
+      <stop id="g3" offset="65%" stop-color="#2ec4b6"/>
+      <stop id="g4" offset="100%" stop-color="#3a86ff"/>
     </radialGradient>
-    
-    <radialGradient id="parentGrad2" cx="50%" cy="50%" r="70%">
-      <stop id="p2a" offset="0%" stop-color="#5f0a87"/>
-      <stop id="p2b" offset="40%" stop-color="#6a0572"/>
-      <stop id="p2c" offset="70%" stop-color="#2d1e6b"/>
-      <stop id="p2d" offset="100%" stop-color="#0b2545"/>
-    </radialGradient>
-    
-    <linearGradient id="parentGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop id="p3a" offset="0%" stop-color="#0f3d91"/>
-      <stop id="p3b" offset="50%" stop-color="#3a86ff"/>
-      <stop id="p3c" offset="100%" stop-color="#2ec4b6"/>
-    </linearGradient>
-    
-    <!-- Mask for the orb shape -->
-    <mask id="orbMask">
-      <circle id="maskCircle" cx="50%" cy="50%" r="100" fill="white" />
-    </mask>
-    
-    <!-- Blend mode for the gradients -->
-    <filter id="blendFilter">
-      <feBlend id="blendMode" mode="screen" in="SourceGraphic" in2="SourceGraphic" />
-    </filter>
   </defs>
   
-  <!-- Organic blob-like orb with undulating edges -->
+  <!-- Single unified orb with beautiful edges -->
   <g id="orbGroup">
-    <!-- Base layer with organic shape -->
-    <path id="baseOrb" d="" fill="url(#parentGrad1)" opacity="0.95" filter="url(#glow)" />
-    
-    <!-- Overlay layers with organic shapes -->
-    <path id="overlayOrb1" d="" fill="url(#parentGrad2)" opacity="0.85" filter="url(#turbulence)" style="mix-blend-mode: soft-light;" />
-    
-    <path id="overlayOrb2" d="" fill="url(#parentGrad3)" opacity="0.75" filter="url(#organicBlend)" style="mix-blend-mode: overlay;" />
+    <!-- Just one path for the entire orb -->
+    <path id="unifiedOrb" d="" fill="url(#unifiedGradient)" filter="url(#unifiedOrbFilter)" />
   </g>
 </svg>
 <script>
