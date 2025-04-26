@@ -168,90 +168,41 @@ function animate() {
   const cx = vw / 2;
   const cy = vh / 2;
   
-  // Animate turbulence for fluid-like movement
-  const turbFreqX = 0.01 + 0.005 * Math.sin(now * 0.00017);
-  const turbFreqY = 0.01 + 0.005 * Math.cos(now * 0.00019);
-  const turbScale = 10 + 5 * Math.sin(now * 0.0003);
-  const turbSeed = Math.floor(now * 0.001) % 100;
-  document.getElementById('turbulenceFilter').setAttribute('baseFrequency', `${turbFreqX} ${turbFreqY}`);
-  document.getElementById('turbulenceFilter').setAttribute('seed', turbSeed);
+  // Animate the unified gradient for flowing effect
+  const gradCx = 50 + 10 * Math.sin(now * 0.0002);
+  const gradCy = 50 + 10 * Math.cos(now * 0.00018);
+  document.getElementById('unifiedGradient').setAttribute('cx', `${gradCx}%`);
+  document.getElementById('unifiedGradient').setAttribute('cy', `${gradCy}%`);
   
-  // Animate gradient positions for flowing effect
-  const grad1cx = 50 + 15 * Math.sin(now * 0.0002);
-  const grad1cy = 50 + 15 * Math.cos(now * 0.00018);
-  const grad2cx = 50 + 15 * Math.sin(now * 0.00022 + 2);
-  const grad2cy = 50 + 15 * Math.cos(now * 0.00019 + 1);
-  document.getElementById('parentGrad1').setAttribute('cx', `${grad1cx}%`);
-  document.getElementById('parentGrad1').setAttribute('cy', `${grad1cy}%`);
-  document.getElementById('parentGrad2').setAttribute('cx', `${grad2cx}%`);
-  document.getElementById('parentGrad2').setAttribute('cy', `${grad2cy}%`);
-  
-  // Animate linear gradient angle
-  const angle = (now * 0.01) % 360;
-  const x1 = 50 + 50 * Math.cos(angle * Math.PI / 180);
-  const y1 = 50 + 50 * Math.sin(angle * Math.PI / 180);
-  const x2 = 50 + 50 * Math.cos((angle + 180) * Math.PI / 180);
-  const y2 = 50 + 50 * Math.sin((angle + 180) * Math.PI / 180);
-  document.getElementById('parentGrad3').setAttribute('x1', `${x1}%`);
-  document.getElementById('parentGrad3').setAttribute('y1', `${y1}%`);
-  document.getElementById('parentGrad3').setAttribute('x2', `${x2}%`);
-  document.getElementById('parentGrad3').setAttribute('y2', `${y2}%`);
-  
-  // Animate gradient colors for first radial gradient
-  const grad1Colors = [
-    {id:'p1a', base:'#0f3d91', alt:'#2d1e6b'},
-    {id:'p1b', base:'#1e6bb8', alt:'#3a86ff'},
-    {id:'p1c', base:'#2ec4b6', alt:'#0b2545'},
-    {id:'p1d', base:'#3a86ff', alt:'#5f0a87'}
+  // Animate the gradient colors for beautiful transitions
+  const gradColors = [
+    {id:'g1', base:'#0f3d91', alt:'#2d1e6b'},
+    {id:'g2', base:'#1e6bb8', alt:'#3a86ff'},
+    {id:'g3', base:'#2ec4b6', alt:'#0b2545'},
+    {id:'g4', base:'#3a86ff', alt:'#5f0a87'}
   ];
   
-  // Animate gradient colors for second radial gradient
-  const grad2Colors = [
-    {id:'p2a', base:'#5f0a87', alt:'#0f3d91'},
-    {id:'p2b', base:'#6a0572', alt:'#2ec4b6'},
-    {id:'p2c', base:'#2d1e6b', alt:'#1e6bb8'},
-    {id:'p2d', base:'#0b2545', alt:'#3a86ff'}
-  ];
-  
-  // Animate gradient colors for linear gradient
-  const grad3Colors = [
-    {id:'p3a', base:'#0f3d91', alt:'#6a0572'},
-    {id:'p3b', base:'#3a86ff', alt:'#2d1e6b'},
-    {id:'p3c', base:'#2ec4b6', alt:'#5f0a87'}
-  ];
-  
-  // Apply color animations to all gradients with different phases
-  [grad1Colors, grad2Colors, grad3Colors].forEach((gradColors, gradIndex) => {
-    gradColors.forEach((stop, i) => {
-      const phase = now * 0.0001 + i * 0.7 + gradIndex * 1.3;
-      const tt = 0.5 + 0.5 * Math.sin(phase + Math.sin(phase * 0.5));
-      const color = lerpColor(stop.base, stop.alt, tt);
-      document.getElementById(stop.id).setAttribute('stop-color', color);
-    });
+  // Apply smooth color animations
+  gradColors.forEach((stop, i) => {
+    const phase = now * 0.0001 + i * 0.7;
+    const tt = 0.5 + 0.5 * Math.sin(phase + Math.sin(phase * 0.5));
+    const color = lerpColor(stop.base, stop.alt, tt);
+    document.getElementById(stop.id).setAttribute('stop-color', color);
   });
   
-  // Generate smooth, organic blob shapes with different seeds and properties
-  const baseRadius = parentRadius * (1 + 0.05 * Math.sin(now * 0.0003));
-  const baseSeed = now * 0.0001;
-  const baseIrregularity = 0.12 + 0.04 * Math.sin(now * 0.0002);
-  const basePath = generateBlobPath(cx, cy, baseRadius, 8, baseIrregularity, baseSeed);
-  document.getElementById('baseOrb').setAttribute('d', basePath);
+  // Generate a single, beautiful blob shape
+  const orbRadius = parentRadius * (1 + 0.05 * Math.sin(now * 0.0003));
+  const orbSeed = now * 0.0001;
   
-  // Second layer - slightly different blob pattern
-  const overlay1Radius = baseRadius * 0.95;
-  const overlay1Seed = now * 0.00012 + 100;
-  const overlay1Irregularity = 0.14 + 0.05 * Math.sin(now * 0.00018);
-  const overlay1Path = generateBlobPath(cx + 8 * Math.sin(now * 0.0002), cy + 8 * Math.cos(now * 0.00018), 
-                                       overlay1Radius, 7, overlay1Irregularity, overlay1Seed);
-  document.getElementById('overlayOrb1').setAttribute('d', overlay1Path);
+  // Use more points for smoother edges
+  const pointCount = 12;
   
-  // Third layer - inner blob layer
-  const overlay2Radius = baseRadius * 0.9;
-  const overlay2Seed = now * 0.00014 + 200;
-  const overlay2Irregularity = 0.16 + 0.06 * Math.sin(now * 0.00016);
-  const overlay2Path = generateBlobPath(cx + 5 * Math.sin(now * 0.00025 + 1), cy + 5 * Math.cos(now * 0.0002 + 2), 
-                                       overlay2Radius, 6, overlay2Irregularity, overlay2Seed);
-  document.getElementById('overlayOrb2').setAttribute('d', overlay2Path);
+  // Gentle irregularity for natural, organic shape
+  const irregularity = 0.15 + 0.05 * Math.sin(now * 0.0002);
+  
+  // Generate the unified orb path
+  const orbPath = generateBlobPath(cx, cy, orbRadius, pointCount, irregularity, orbSeed);
+  document.getElementById('unifiedOrb').setAttribute('d', orbPath);
   
   requestAnimationFrame(animate);
 }
