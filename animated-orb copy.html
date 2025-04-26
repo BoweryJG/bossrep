@@ -353,31 +353,12 @@ function animate() {
     const morphT = now * 0.0005 + i * 10;
     const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
     childOrbs[i].setAttribute("d", childPath);
-      path.setAttribute("opacity", fade * 0.95);
-    }
-    // If orb just became invisible, emit a final burst and hide
-    else if (state.wasVisible && fade <= 0.05) {
-      const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 12, i, now); // big burst
-      path.setAttribute("opacity", 0);
-      state.wasVisible = false;
-    }
-    // If orb just became visible, emit appear particles and show
-    else if (!state.wasVisible && fade > 0.05) {
-      const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 9, i, now);
-      path.setAttribute("opacity", fade * 0.95);
-      state.wasVisible = true;
-    } else {
-      // Normal fade
-      path.setAttribute("opacity", fade * 0.95);
-    }
-    childrenGroup.appendChild(path);
   }
   // Animate and render particles
   animateParticles();
   requestAnimationFrame(animate);
 }
+{{ ... }}
 // --- Cosmic particle system ---
 const particlesGroup = document.getElementById('particles');
 let particles = [];
