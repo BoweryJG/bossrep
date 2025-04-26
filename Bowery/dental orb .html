@@ -121,9 +121,9 @@ function animate() {
   const cx = vw / 2;
   const cy = vh / 2;
   const r = parentRadius;
-  // Keep morphing amplitude and speed very low for subtle, slow movement
-  const amp = 2 + 1.5 * Math.sin(now * 0.0001); // much smaller amplitude
-  const t = now * 0.00015; // much slower morph
+  // Make the orb almost perfectly spherical
+  const amp = 0.2 + 0.1 * Math.sin(now * 0.00005); // nearly zero amplitude
+  const t = now * 0.00003; // extremely slow morph
   const path = generateSuperSmoothBlob(cx, cy, r, 64, t, amp);
   document.getElementById('parentOrb').setAttribute('d', path);
   requestAnimationFrame(animate);
