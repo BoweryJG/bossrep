@@ -172,47 +172,6 @@ document.getElementById('parentOrb').addEventListener('click', () => {
   }
 });
 
-  // Mouse proximity and velocity effects (only declared ONCE per frame)
-  const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-  const {x: px, y: py} = window.parentCenter || {x: vw/2, y: vh/2};
-  const dist = Math.sqrt(Math.pow(px - window.mouse.x, 2) + Math.pow(py - window.mouse.y, 2));
-  const maxDist = Math.min(vw, vh) / 2;
-  const proximity = 1 - Math.min(dist / maxDist, 1); // 1 = close, 0 = far
-  const mouseWobble = Math.min(window.mouse.speed / 40, 1.2); // Cap wobble
-  const parentAmp = 0.45 + proximity * 0.55 + mouseWobble * 0.5;
-
-  // Animate orb state
-  const spring = 0.045 * (1 + orbMorphSpeed);
-  const damping = 0.90 - orbMorphSpeed * 0.33;
-  [orbState.drag, orbState.dragV] = dampedSpring(orbState.drag, orbState.dragTarget, orbState.dragV, spring, damping);
-  if (Math.abs(orbState.dragTarget) < 0.1 && Math.abs(orbState.drag) > 0.1) {
-    orbState.wobble += 0.04 + orbMorphSpeed * 0.9;
-    orbState.drag += Math.sin(orbState.wobble) * Math.max(0, Math.abs(orbState.drag) * 0.13 * (1 + orbMorphSpeed));
-  } else if (Math.abs(orbState.dragTarget) < 0.1) {
-    orbState.wobble = 0;
-  }
-  orbState.dragTarget = approach(orbState.dragTarget, 0, 0.018 + orbMorphSpeed * 0.6);
-
-  // Anchor orb in the center, no drift
-  window.parentCenter = {x: px, y: py};
-
-// --- Mouse tracking for proximity and velocity (outside animate) ---
-window.mouse = { x: window.innerWidth/2, y: window.innerHeight/2, lastX: window.innerWidth/2, lastY: window.innerHeight/2, speed: 0 };
-window.addEventListener('mousemove', (e) => {
-  window.mouse.lastX = window.mouse.x;
-  window.mouse.lastY = window.mouse.y;
-  window.mouse.x = e.clientX;
-  window.mouse.y = e.clientY;
-  const dx = window.mouse.x - window.mouse.lastX;
-  const dy = window.mouse.y - window.mouse.lastY;
-  window.mouse.speed = Math.sqrt(dx*dx + dy*dy);
-});
-document.getElementById('parentOrb').addEventListener('click', () => {
-  if (window.navigator.vibrate) {
-    window.navigator.vibrate(40);
-  }
-});
-
 function animate() {
   // Animate parent gradient
   const parentStops = [
