@@ -38,7 +38,6 @@
   <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95"/>
 </svg>
 <script>
-function lerp(a, b, t) { return a + (b - a) * t; }
 function hslToHex(h, s, l) {
   h /= 360; s /= 100; l /= 100;
   let r, g, b;
@@ -60,6 +59,7 @@ function hslToHex(h, s, l) {
   }
   return "#" + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, "0")).join("");
 }
+
 function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   const pts = [];
   for (let i = 0; i < points; i++) {
@@ -102,12 +102,6 @@ function makeOrbState() {
     drag: 0,
     dragTarget: 0,
     dragV: 0,
-    squash: 0,
-    squashTarget: 0,
-    squashV: 0,
-    mouseDir: 0,
-    mouseDirTarget: 0,
-    mouseDirV: 0,
     wobble: 0,
     lastUpdate: performance.now(),
   };
@@ -155,6 +149,7 @@ function dampedSpring(current, target, velocity, stiffness, damping) {
 }
 
 function animate() {
+  // Animate parent gradient
   const parentStops = [
     { id: "p0", phase: 0 },
     { id: "p1", phase: Math.PI * 0.5 },
@@ -171,6 +166,7 @@ function animate() {
     document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
   }
 
+  // Animate orb state
   const spring = 0.045 * (1 + orbMorphSpeed);
   const damping = 0.90 - orbMorphSpeed * 0.33;
   [orbState.drag, orbState.dragV] = dampedSpring(orbState.drag, orbState.dragTarget, orbState.dragV, spring, damping);
@@ -182,6 +178,7 @@ function animate() {
   }
   orbState.dragTarget = approach(orbState.dragTarget, 0, 0.018 + orbMorphSpeed * 0.6);
 
+  // Animate orb position with slow, organic drift
   const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
   const px = window.parentCenterBase.x + Math.sin(now * 0.00011) * vw * 0.09 + Math.cos(now * 0.00007) * vw * 0.07;
   const py = window.parentCenterBase.y + Math.cos(now * 0.00009) * vh * 0.08 + Math.sin(now * 0.00016) * vh * 0.06;
@@ -196,81 +193,8 @@ function animate() {
   parentOrb.setAttribute('d', parentPath);
 
   requestAnimationFrame(animate);
-    if (fade < 0.5 && fade > 0.05) {
-      const color = lerpColor(fam[0], fam[1], tcol);
-      // Emit more particles as fade approaches zero
-      const emission = Math.ceil((0.5 - fade) * 12); // up to 6 particles per frame
-      emitParticles(x, y, color, emission, i, now);
-      path.setAttribute("opacity", fade * 0.95);
-    }
-    // If orb just became invisible, emit a final burst and hide
-    else if (state.wasVisible && fade <= 0.05) {
-      const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 12, i, now); // big burst
-      path.setAttribute("opacity", 0);
-      state.wasVisible = false;
-    }
-    // If orb just became visible, emit appear particles and show
-    else if (!state.wasVisible && fade > 0.05) {
-      const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 9, i, now);
-      path.setAttribute("opacity", fade * 0.95);
-      state.wasVisible = true;
-    } else {
-      // Normal fade
-      path.setAttribute("opacity", fade * 0.95);
-    }
-    childrenGroup.appendChild(path);
-  }
-  // Animate and render particles
-  animateParticles();
-  requestAnimationFrame(animate);
 }
-// Removed particle system
-function animateParticles() {
-  // Update and render particles
-  particles = particles.filter(p => p.life > 0);
-  particlesGroup.innerHTML = '';
-  for (const p of particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vx *= 0.98;
-    p.vy *= 0.98;
-    p.life -= p.decay;
-    p.opacity = Math.max(0, p.life);
-    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circ.setAttribute("cx", p.x);
-    circ.setAttribute("cy", p.y);
-    circ.setAttribute("r", p.r * p.opacity);
-    circ.setAttribute("fill", p.color);
-    circ.setAttribute("opacity", p.opacity * 0.7);
-    particlesGroup.appendChild(circ);
-  }
-}
-
-function emitParticles(x, y, color, count = 3, i = 0, now = 0) {
-  for (let j = 0; j < count; j++) {
-    // Add a sparkle: random hue offset
-    let h = (i * 67 + now * 0.018) % 360 + (Math.random() - 0.5) * 24; // sparkle
-    let s = 85 + Math.random() * 10;
-    let l = 55 + Math.random() * 20;
-    const particleColor = hslToHex(h, s, l);
-    const angle = Math.random() * 2 * Math.PI;
-    const speed = 0.4 + Math.random() * 0.7; // slower
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
-    particles.push({
-      x, y,
-      vx, vy,
-      r: 1.1 + Math.random() * 1.2, // much smaller
-      life: 0.6, // fades faster
-      decay: 0.025 + Math.random() * 0.015, // fades faster
-      color: particleColor,
-      opacity: 0.45 // more subtle
-    });
-  }
-}
-animate(); // Only animates parent orb
+animate();
 </script>
 </body>
 </html>
