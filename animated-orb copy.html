@@ -311,6 +311,7 @@ function animate() {
   // --- Render children orbs in correct z-order ---
   let behind = [], front = [];
   const parentY = window.parentCenter.y;
+  childrenGroup.innerHTML = '';
   for (let i = 0; i < childCount; i++) {
     const state = orbStates[i + 1];
     // Animate gradient stops for each child
