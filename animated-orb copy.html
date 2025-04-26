@@ -316,9 +316,8 @@ function animate() {
   childrenGroup.innerHTML = '';
 
   for (let i = 0; i < childCount; i++) {
-    const state = orbStates[i + 1];
-    // Animate dynamic color family for each orb
-    const fam = getDynamicColorFamily(i, now);
+    // Animate static color family for each orb
+    const fam = colorFamilies[i];
     const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
     document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
     document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
@@ -328,7 +327,7 @@ function animate() {
     const baseAngle = (now * 0.00022 + i * (2 * Math.PI / childCount));
     // Orbit radius breathes and wobbles independently
     const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-    const parentR = (parentRadius + state.drag * 0.15) * (window.orbScale || 1);
+    const parentR = (parentRadius) * (window.orbScale || 1);
     // Max allowed: from edge of parent to edge of screen
     const minEdge = Math.min(
       window.parentCenter.x,
@@ -346,30 +345,14 @@ function animate() {
     const ellipseA = orbitRadius * 1.3 * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
     const ellipseB = orbitRadius * 1.1 * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
     const angle = baseAngle + Math.sin(now * 0.00009 + i * 1.7) * 0.22;
-    const dragAngle = orbMorphDirections[i + 1];
-    const dx = Math.cos(dragAngle) * state.drag;
-    const dy = Math.sin(dragAngle) * state.drag;
-    const x = window.parentCenter.x + Math.cos(angle) * ellipseA + dx;
-    const y = window.parentCenter.y + Math.sin(angle) * ellipseB + dy;
+    const x = window.parentCenter.x + Math.cos(angle) * ellipseA;
+    const y = window.parentCenter.y + Math.sin(angle) * ellipseB;
     const scale = window.orbScale || 1;
-    const cR = (childRadius + state.drag * 0.08) * scale;
-    const cAmp = (childAmp + Math.abs(state.drag) * 0.006) * scale;
+    const cR = (childRadius) * scale;
+    const cAmp = (childAmp) * scale;
     const morphT = now * 0.0005 + i * 10;
     const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", childPath);
-    path.setAttribute("fill", `url(#${childGradIds[i]})`);
-    // Fade out as dragTarget increases, but trigger instant dissolve/appear
-    const fadeStart = 40, fadeEnd = 340;
-    const fade = Math.min(1, Math.max(0, (fadeEnd - Math.abs(state.dragTarget)) / (fadeEnd - fadeStart)));
-    // Track last visible state
-    if (state.wasVisible === undefined) state.wasVisible = fade > 0.5;
-    // Start dissolving into particles as soon as fade < 0.5
-    if (fade < 0.5 && fade > 0.05) {
-      const color = lerpColor(fam[0], fam[1], tcol);
-      // Emit more particles as fade approaches zero
-      const emission = Math.ceil((0.5 - fade) * 12); // up to 6 particles per frame
-      emitParticles(x, y, color, emission, i, now);
+    childOrbs[i].setAttribute("d", childPath);
       path.setAttribute("opacity", fade * 0.95);
     }
     // If orb just became invisible, emit a final burst and hide
