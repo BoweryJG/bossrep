@@ -399,23 +399,15 @@ function emitParticles(x, y, color, count = 8) {
     const speed = 0.7 + Math.random() * 1.7;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
-    // If dissolving (dragTarget large), emit particles
-    if (Math.abs(state.dragTarget) > 40) {
-      // Use orb color
-      const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 5);
-    }
-    // ... (rest of child orb code)
-    // (rest of child z-order code)
-  }
-  // ...
-  // Render behind, parent, front as before
-
-  // Animate and render particles
-  animateParticles();
-
-  requestAnimationFrame(animate);
-}
+    particles.push({
+      x, y,
+      vx, vy,
+      r: 3 + Math.random() * 4,
+      life: 1,
+      decay: 0.012 + Math.random() * 0.012,
+      color,
+      opacity: 1
+    });
 animate();
 </script>
 </body>
