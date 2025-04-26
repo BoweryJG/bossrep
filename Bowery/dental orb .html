@@ -127,10 +127,9 @@ function adjustSVGSize() {
   const vh = window.innerHeight;
   // Store for later
   window.viewportSize = {vw, vh};
-  // Orbit radii: parentRadius + 120 + i*40 (i = 0..childCount-1)
-  const maxChildIndex = childCount - 1;
-  const maxOrbit = parentRadius + 120 + maxChildIndex * 40;
-  const maxReach = maxOrbit + childRadius + 8; // +8 for morphing amplitude margin
+  // Orbit radius: parentRadius + 120 (single orb)
+  const maxOrbit = parentRadius + 120;
+  const maxReach = maxOrbit + 8; // +8 for morphing amplitude margin
   // Fit orbs within the smallest viewport dimension
   const minDim = Math.min(vw, vh);
   const scale = minDim / (maxReach * 2);
