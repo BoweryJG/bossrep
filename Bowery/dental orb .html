@@ -30,10 +30,14 @@
 
   <defs>
     <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
-      <stop id="p0" offset="0%" stop-color="#00E5FF"/>
-      <stop id="p1" offset="100%" stop-color="#5B3CFF"/>
-      <stop id="p2" offset="50%" stop-color="#00E5FF"/>
-      <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
+      <stop id="p0" offset="0%" stop-color="#e6f7fd"/>
+      <stop id="p1" offset="18%" stop-color="#b0e1fc"/>
+      <stop id="p2" offset="36%" stop-color="#a2d7f2"/>
+      <stop id="p3" offset="54%" stop-color="#d2c7fd"/>
+      <stop id="p4" offset="68%" stop-color="#c5f3f7"/>
+      <stop id="p5" offset="80%" stop-color="#f8fafc"/>
+      <stop id="p6" offset="90%" stop-color="#fffbe7"/>
+      <stop id="p7" offset="100%" stop-color="#a3ffd6"/>
     </radialGradient>
   </defs>
   <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95" />
@@ -126,6 +130,24 @@ function animate() {
   const t = now * 0.00003;
   const path = generateSuperSmoothBlob(cx, cy, r, 64, t, amp);
   document.getElementById('parentOrb').setAttribute('d', path);
+
+  // Animate radiant, shifting dental color stops
+  const stops = [
+    {id:'p0', base:'#e6f7fd', alt:'#b0e1fc'}, // pearl blue
+    {id:'p1', base:'#b0e1fc', alt:'#a2d7f2'}, // aqua to blue
+    {id:'p2', base:'#a2d7f2', alt:'#d2c7fd'}, // blue to violet
+    {id:'p3', base:'#d2c7fd', alt:'#c5f3f7'}, // violet to mint
+    {id:'p4', base:'#c5f3f7', alt:'#f8fafc'}, // mint to white
+    {id:'p5', base:'#f8fafc', alt:'#fffbe7'}, // white to gold
+    {id:'p6', base:'#fffbe7', alt:'#a3ffd6'}, // gold to radiant mint
+    {id:'p7', base:'#a3ffd6', alt:'#e6f7fd'}  // mint to pearl
+  ];
+  for (let i = 0; i < stops.length; i++) {
+    // Award-winning, organic, radiant color shifting
+    const tt = 0.5 + 0.5 * Math.sin(now * 0.00013 + i * 0.8 + Math.sin(now * 0.00021 + i * 1.2));
+    const color = lerpColor(stops[i].base, stops[i].alt, tt);
+    document.getElementById(stops[i].id).setAttribute('stop-color', color);
+  }
   requestAnimationFrame(animate);
 }
 animate();
