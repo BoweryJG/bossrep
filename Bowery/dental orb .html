@@ -155,32 +155,84 @@ function animate() {
   const vh = window.innerHeight;
   const cx = vw / 2;
   const cy = vh / 2;
-  const r = parentRadius;
-  // Subtle morph, nearly a sphere
-  const amp = 0.2 + 0.1 * Math.sin(now * 0.00005);
-  const t = now * 0.00003;
-  const path = generateSuperSmoothBlob(cx, cy, r, 64, t, amp);
-  document.getElementById('parentOrb').setAttribute('d', path);
-
-  // Animate radiant, shifting dental color stops
-  const stops = [
-    {id:'p0', base:'#0f3d91', alt:'#1e6bb8', baseOffset:0, altOffset:8},
-    {id:'p1', base:'#1e6bb8', alt:'#2ec4b6', baseOffset:13, altOffset:22},
-    {id:'p2', base:'#2ec4b6', alt:'#3a86ff', baseOffset:27, altOffset:35},
-    {id:'p3', base:'#3a86ff', alt:'#5f0a87', baseOffset:41, altOffset:50},
-    {id:'p4', base:'#5f0a87', alt:'#6a0572', baseOffset:59, altOffset:64},
-    {id:'p5', base:'#6a0572', alt:'#2d1e6b', baseOffset:73, altOffset:78},
-    {id:'p6', base:'#2d1e6b', alt:'#0b2545', baseOffset:86, altOffset:92},
-    {id:'p7', base:'#0b2545', alt:'#0f3d91', baseOffset:100, altOffset:100}
+  
+  // Animate the mask circle for subtle breathing effect
+  const breatheScale = 1 + 0.02 * Math.sin(now * 0.0005);
+  const maskRadius = parentRadius * breatheScale;
+  document.getElementById('maskCircle').setAttribute('r', maskRadius);
+  
+  // Animate turbulence for fluid-like movement
+  const turbFreqX = 0.01 + 0.005 * Math.sin(now * 0.00017);
+  const turbFreqY = 0.01 + 0.005 * Math.cos(now * 0.00019);
+  const turbScale = 10 + 5 * Math.sin(now * 0.0003);
+  const turbSeed = Math.floor(now * 0.001) % 100;
+  document.getElementById('turbulenceFilter').setAttribute('baseFrequency', `${turbFreqX} ${turbFreqY}`);
+  document.getElementById('turbulenceFilter').setAttribute('seed', turbSeed);
+  
+  // Animate gradient positions for flowing effect
+  const grad1cx = 50 + 15 * Math.sin(now * 0.0002);
+  const grad1cy = 50 + 15 * Math.cos(now * 0.00018);
+  const grad2cx = 50 + 15 * Math.sin(now * 0.00022 + 2);
+  const grad2cy = 50 + 15 * Math.cos(now * 0.00019 + 1);
+  document.getElementById('parentGrad1').setAttribute('cx', `${grad1cx}%`);
+  document.getElementById('parentGrad1').setAttribute('cy', `${grad1cy}%`);
+  document.getElementById('parentGrad2').setAttribute('cx', `${grad2cx}%`);
+  document.getElementById('parentGrad2').setAttribute('cy', `${grad2cy}%`);
+  
+  // Animate linear gradient angle
+  const angle = (now * 0.01) % 360;
+  const x1 = 50 + 50 * Math.cos(angle * Math.PI / 180);
+  const y1 = 50 + 50 * Math.sin(angle * Math.PI / 180);
+  const x2 = 50 + 50 * Math.cos((angle + 180) * Math.PI / 180);
+  const y2 = 50 + 50 * Math.sin((angle + 180) * Math.PI / 180);
+  document.getElementById('parentGrad3').setAttribute('x1', `${x1}%`);
+  document.getElementById('parentGrad3').setAttribute('y1', `${y1}%`);
+  document.getElementById('parentGrad3').setAttribute('x2', `${x2}%`);
+  document.getElementById('parentGrad3').setAttribute('y2', `${y2}%`);
+  
+  // Animate gradient colors for first radial gradient
+  const grad1Colors = [
+    {id:'p1a', base:'#0f3d91', alt:'#2d1e6b'},
+    {id:'p1b', base:'#1e6bb8', alt:'#3a86ff'},
+    {id:'p1c', base:'#2ec4b6', alt:'#0b2545'},
+    {id:'p1d', base:'#3a86ff', alt:'#5f0a87'}
   ];
-  for (let i = 0; i < stops.length; i++) {
-    // Animate both color and offset for each stop
-    const tt = 0.5 + 0.5 * Math.sin(now * 0.00013 + i * 0.8 + Math.sin(now * 0.00021 + i * 1.2));
-    const color = lerpColor(stops[i].base, stops[i].alt, tt);
-    const offset = stops[i].baseOffset + (stops[i].altOffset - stops[i].baseOffset) * (0.5 + 0.5 * Math.sin(now * 0.00011 + i * 1.1));
-    document.getElementById(stops[i].id).setAttribute('stop-color', color);
-    document.getElementById(stops[i].id).setAttribute('offset', offset + '%');
-  }
+  
+  // Animate gradient colors for second radial gradient
+  const grad2Colors = [
+    {id:'p2a', base:'#5f0a87', alt:'#0f3d91'},
+    {id:'p2b', base:'#6a0572', alt:'#2ec4b6'},
+    {id:'p2c', base:'#2d1e6b', alt:'#1e6bb8'},
+    {id:'p2d', base:'#0b2545', alt:'#3a86ff'}
+  ];
+  
+  // Animate gradient colors for linear gradient
+  const grad3Colors = [
+    {id:'p3a', base:'#0f3d91', alt:'#6a0572'},
+    {id:'p3b', base:'#3a86ff', alt:'#2d1e6b'},
+    {id:'p3c', base:'#2ec4b6', alt:'#5f0a87'}
+  ];
+  
+  // Apply color animations to all gradients with different phases
+  [grad1Colors, grad2Colors, grad3Colors].forEach((gradColors, gradIndex) => {
+    gradColors.forEach((stop, i) => {
+      const phase = now * 0.0001 + i * 0.7 + gradIndex * 1.3;
+      const tt = 0.5 + 0.5 * Math.sin(phase + Math.sin(phase * 0.5));
+      const color = lerpColor(stop.base, stop.alt, tt);
+      document.getElementById(stop.id).setAttribute('stop-color', color);
+    });
+  });
+  
+  // Animate orb positions for subtle movement
+  const orb1x = cx + 5 * Math.sin(now * 0.0003);
+  const orb1y = cy + 5 * Math.cos(now * 0.00025);
+  const orb2x = cx + 5 * Math.sin(now * 0.00027 + 2);
+  const orb2y = cy + 5 * Math.cos(now * 0.00023 + 1);
+  document.getElementById('baseOrb').setAttribute('cx', orb1x);
+  document.getElementById('baseOrb').setAttribute('cy', orb1y);
+  document.getElementById('overlayOrb1').setAttribute('cx', orb2x);
+  document.getElementById('overlayOrb1').setAttribute('cy', orb2y);
+  
   requestAnimationFrame(animate);
 }
 animate();
