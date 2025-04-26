@@ -194,9 +194,6 @@ document.getElementById('parentOrb').addEventListener('click', () => {
   orbState.dragTarget = approach(orbState.dragTarget, 0, 0.018 + orbMorphSpeed * 0.6);
 
   // Anchor orb in the center, no drift
-  const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-  const px = vw / 2;
-  const py = vh / 2;
   window.parentCenter = {x: px, y: py};
 
 // --- Mouse tracking for proximity and velocity (outside animate) ---
