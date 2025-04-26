@@ -81,15 +81,15 @@
     </filter>
   </defs>
   
-  <!-- Single unified orb with multiple blended layers -->
+  <!-- Organic blob-like orb with undulating edges -->
   <g id="orbGroup">
-    <!-- Base layer with mask -->
-    <circle id="baseOrb" cx="50%" cy="50%" r="100" fill="url(#parentGrad1)" opacity="0.95" filter="url(#glow)" />
+    <!-- Base layer with organic shape -->
+    <path id="baseOrb" d="" fill="url(#parentGrad1)" opacity="0.95" filter="url(#glow)" />
     
-    <!-- Overlay layers with seamless blending -->
-    <circle id="overlayOrb1" cx="50%" cy="50%" r="100" fill="url(#parentGrad2)" opacity="0.85" filter="url(#turbulence)" style="mix-blend-mode: soft-light;" />
+    <!-- Overlay layers with organic shapes -->
+    <path id="overlayOrb1" d="" fill="url(#parentGrad2)" opacity="0.85" filter="url(#turbulence)" style="mix-blend-mode: soft-light;" />
     
-    <circle id="overlayOrb2" cx="50%" cy="50%" r="98" fill="url(#parentGrad3)" opacity="0.75" filter="url(#organicBlend)" style="mix-blend-mode: overlay;" />
+    <path id="overlayOrb2" d="" fill="url(#parentGrad3)" opacity="0.75" filter="url(#organicBlend)" style="mix-blend-mode: overlay;" />
   </g>
 </svg>
 <script>
@@ -140,17 +140,56 @@ function adjustSVGSize() {
 adjustSVGSize();
 window.addEventListener('resize', adjustSVGSize);
 
+// Function to generate organic blob shapes
+function generateBlobPath(cx, cy, radius, points, irregularity, spikiness, seed) {
+  const path = [];
+  const angleStep = (Math.PI * 2) / points;
+  
+  // Generate points around a circle with random variations
+  for (let i = 0; i < points; i++) {
+    const angle = i * angleStep;
+    
+    // Add randomness to the radius
+    const rand = Math.sin(angle * 3 + seed) * Math.cos(angle * 5 + seed * 0.7) * Math.sin(angle * 7 + seed * 0.3);
+    const radiusVariation = 1 + (rand * irregularity);
+    const currentRadius = radius * radiusVariation;
+    
+    // Add spikes/dents
+    const spikeFreq = 4 + Math.floor(Math.sin(seed * 0.01) * 3);
+    const spike = Math.sin(angle * spikeFreq + seed * 0.2) * spikiness;
+    const finalRadius = currentRadius * (1 + spike);
+    
+    // Calculate point
+    const x = cx + Math.cos(angle) * finalRadius;
+    const y = cy + Math.sin(angle) * finalRadius;
+    
+    path.push({ x, y });
+  }
+  
+  // Create SVG path string with bezier curves for smoothness
+  let svgPath = `M ${path[0].x},${path[0].y}`;
+  
+  for (let i = 0; i < points; i++) {
+    const p1 = path[i];
+    const p2 = path[(i + 1) % points];
+    
+    // Control points for bezier curve
+    const cp1x = p1.x + (p2.x - p1.x) * 0.5 - (path[(i + 2) % points].y - p1.y) * 0.2;
+    const cp1y = p1.y + (p2.y - p1.y) * 0.5 + (path[(i + 2) % points].x - p1.x) * 0.2;
+    
+    svgPath += ` C ${cp1x},${cp1y} ${cp1x},${cp1y} ${p2.x},${p2.y}`;
+  }
+  
+  svgPath += ' Z';
+  return svgPath;
+}
+
 function animate() {
   const now = performance.now();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const cx = vw / 2;
   const cy = vh / 2;
-  
-  // Animate the mask circle for subtle breathing effect
-  const breatheScale = 1 + 0.02 * Math.sin(now * 0.0005);
-  const maskRadius = parentRadius * breatheScale;
-  document.getElementById('maskCircle').setAttribute('r', maskRadius);
   
   // Animate turbulence for fluid-like movement
   const turbFreqX = 0.01 + 0.005 * Math.sin(now * 0.00017);
@@ -214,15 +253,31 @@ function animate() {
     });
   });
   
-  // Animate orb positions for subtle movement
-  const orb1x = cx + 5 * Math.sin(now * 0.0003);
-  const orb1y = cy + 5 * Math.cos(now * 0.00025);
-  const orb2x = cx + 5 * Math.sin(now * 0.00027 + 2);
-  const orb2y = cy + 5 * Math.cos(now * 0.00023 + 1);
-  document.getElementById('baseOrb').setAttribute('cx', orb1x);
-  document.getElementById('baseOrb').setAttribute('cy', orb1y);
-  document.getElementById('overlayOrb1').setAttribute('cx', orb2x);
-  document.getElementById('overlayOrb1').setAttribute('cy', orb2y);
+  // Generate organic blob shapes with different seeds and properties
+  const baseRadius = parentRadius * (1 + 0.05 * Math.sin(now * 0.0003));
+  const baseSeed = now * 0.0001;
+  const baseIrregularity = 0.12 + 0.04 * Math.sin(now * 0.0002);
+  const baseSpikiness = 0.08 + 0.03 * Math.cos(now * 0.00015);
+  const basePath = generateBlobPath(cx, cy, baseRadius, 12, baseIrregularity, baseSpikiness, baseSeed);
+  document.getElementById('baseOrb').setAttribute('d', basePath);
+  
+  // Second layer - more irregular
+  const overlay1Radius = baseRadius * 0.95;
+  const overlay1Seed = now * 0.00012 + 100;
+  const overlay1Irregularity = 0.15 + 0.05 * Math.sin(now * 0.00018);
+  const overlay1Spikiness = 0.1 + 0.04 * Math.cos(now * 0.00013);
+  const overlay1Path = generateBlobPath(cx + 8 * Math.sin(now * 0.0002), cy + 8 * Math.cos(now * 0.00018), 
+                                       overlay1Radius, 10, overlay1Irregularity, overlay1Spikiness, overlay1Seed);
+  document.getElementById('overlayOrb1').setAttribute('d', overlay1Path);
+  
+  // Third layer - most organic
+  const overlay2Radius = baseRadius * 0.9;
+  const overlay2Seed = now * 0.00014 + 200;
+  const overlay2Irregularity = 0.18 + 0.06 * Math.sin(now * 0.00016);
+  const overlay2Spikiness = 0.12 + 0.05 * Math.cos(now * 0.00011);
+  const overlay2Path = generateBlobPath(cx + 5 * Math.sin(now * 0.00025 + 1), cy + 5 * Math.cos(now * 0.0002 + 2), 
+                                       overlay2Radius, 8, overlay2Irregularity, overlay2Spikiness, overlay2Seed);
+  document.getElementById('overlayOrb2').setAttribute('d', overlay2Path);
   
   requestAnimationFrame(animate);
 }
