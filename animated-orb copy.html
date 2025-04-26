@@ -432,6 +432,8 @@ function animateParticles() {
     p.vy *= 0.98;
     p.life -= p.decay;
     p.opacity = Math.max(0, p.life);
+    // Guard: skip if x/y is not a valid number
+    if (typeof p.x !== 'number' || typeof p.y !== 'number' || isNaN(p.x) || isNaN(p.y)) continue;
     const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circ.setAttribute("cx", p.x);
     circ.setAttribute("cy", p.y);
@@ -621,6 +623,9 @@ animate = function() {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
     path.setAttribute("d", childPath);
     path.setAttribute("fill", `url(#${childGradIds[i]})`);
+    // Recompute fade in this scope if not available
+    const fadeStart = 40, fadeEnd = 340;
+    const fade = Math.min(1, Math.max(0, (fadeEnd - Math.abs(state.dragTarget)) / (fadeEnd - fadeStart)));
     path.setAttribute("opacity", fade * 0.95);
     childrenGroup.appendChild(path);
     // Store orb center for hit testing
