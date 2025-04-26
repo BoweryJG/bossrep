@@ -125,38 +125,16 @@ function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   return d;
 }
 
-// --- Theme Palettes ---
-const THEMES = {
-  cosmic: { base: 0, sat: 85, light: 60 },
-  pastel: { base: 200, sat: 50, light: 85 },
-  neon:   { base: 120, sat: 98, light: 65 },
-  dark:   { base: 260, sat: 60, light: 45 },
-};
-let currentTheme = 'cosmic', themeTarget = 'cosmic', themeLerp = 1;
-function setTheme(theme) { themeTarget = theme; themeLerp = 0; }
-let colorRipplePhase = 0;
-let orbPulse = [];
-let orbTwinkle = [];
-let orbMorphDramatic = [];
-let orbTrails = [];
+
 const childCount = 5;
-// --- Enhanced Dynamic Color Families (with theme and ripple) ---
-function getDynamicColorFamily(i, now) {
-  // Animate theme
-  if (themeLerp < 1) themeLerp = Math.min(1, themeLerp+0.02);
-  const from = THEMES[currentTheme], to = THEMES[themeTarget];
-  const base = lerp(from.base, to.base, themeLerp);
-  const sat = lerp(from.sat, to.sat, themeLerp);
-  const light = lerp(from.light, to.light, themeLerp);
-  if (themeLerp === 1) currentTheme = themeTarget;
-  // Color ripple
-  const ripple = Math.sin(colorRipplePhase + i*1.2);
-  const baseHue = (base + i * 67 + now * 0.018 + ripple*30) % 360;
-  const hue2 = (baseHue + 40 + 20 * Math.sin(now * 0.0007 + i)) % 360;
-  const light1 = light + 10 * Math.cos(now * 0.0004 + i * 2);
-  const light2 = light-25 + 15 * Math.sin(now * 0.0006 + i * 3);
-  return [hslToHex(baseHue, sat, light1), hslToHex(hue2, sat, light2)];
-}
+const colorFamilies = [
+  ["#B3D8FF", "#0A192F"],
+  ["#C6FFD9", "#145A32"],
+  ["#FFB3C9", "#7B1F3A"],
+  ["#E0D1FF", "#311B4F"],
+  ["#FFF5B3", "#4B3800"]
+];
+
 // parentCenter will be set dynamically below
 const parentRadius = 100;
 const childRadius = 36;
