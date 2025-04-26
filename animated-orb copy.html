@@ -307,6 +307,8 @@ function animate() {
   parentOrb.setAttribute('d', parentPath);
 
   // --- Children ---
+  // --- Render children orbs in correct z-order ---
+  let behind = [], front = [];
   for (let i = 0; i < childCount; i++) {
     const state = orbStates[i + 1];
     // Animate gradient stops for each child
@@ -355,7 +357,34 @@ function animate() {
     const cAmp = (childAmp + Math.abs(state.drag) * 0.006) * scale;
     const morphT = now * 0.0005 + i * 10;
     const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
-    childOrbs[i].setAttribute("d", childPath);
+    // Store rendering info for later z-ordering
+    const childInfo = {i, path: childPath, x, y, angle, cR};
+    // If angle is between -PI/2 and PI/2, it's in front
+    const normAngle = ((angle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI); // [0, 2PI)
+    if (normAngle > 3*Math.PI/2 || normAngle < Math.PI/2) {
+      front.push(childInfo);
+    } else {
+      behind.push(childInfo);
+    }
+  }
+  // Render behind children first
+  childrenGroup.innerHTML = '';
+  for (const orb of behind) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", orb.path);
+    path.setAttribute("fill", `url(#${childGradIds[orb.i]})`);
+    path.setAttribute("opacity", "0.95");
+    childrenGroup.appendChild(path);
+  }
+  // Render parent orb
+  parentOrb.parentNode.appendChild(parentOrb);
+  // Render in-front children
+  for (const orb of front) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", orb.path);
+    path.setAttribute("fill", `url(#${childGradIds[orb.i]})`);
+    path.setAttribute("opacity", "0.95");
+    childrenGroup.appendChild(path);
   }
   requestAnimationFrame(animate);
 }
