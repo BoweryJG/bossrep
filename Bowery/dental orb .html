@@ -140,24 +140,25 @@ function adjustSVGSize() {
 adjustSVGSize();
 window.addEventListener('resize', adjustSVGSize);
 
-// Function to generate organic blob shapes
-function generateBlobPath(cx, cy, radius, points, irregularity, spikiness, seed) {
+// Function to generate smooth, organic blob shapes like in the reference image
+function generateBlobPath(cx, cy, radius, points, irregularity, seed) {
   const path = [];
   const angleStep = (Math.PI * 2) / points;
   
-  // Generate points around a circle with random variations
+  // Generate points around a circle with gentle, organic variations
   for (let i = 0; i < points; i++) {
     const angle = i * angleStep;
     
-    // Add randomness to the radius
-    const rand = Math.sin(angle * 3 + seed) * Math.cos(angle * 5 + seed * 0.7) * Math.sin(angle * 7 + seed * 0.3);
-    const radiusVariation = 1 + (rand * irregularity);
-    const currentRadius = radius * radiusVariation;
+    // Create gentle, undulating variations
+    // Use lower frequencies for more organic, blob-like shapes
+    const variation = (
+      Math.sin(angle * 2 + seed * 0.7) * 0.3 +
+      Math.cos(angle * 1.5 + seed * 0.5) * 0.3 +
+      Math.sin(angle * 1 + seed * 0.3) * 0.4
+    ) * irregularity;
     
-    // Add spikes/dents
-    const spikeFreq = 4 + Math.floor(Math.sin(seed * 0.01) * 3);
-    const spike = Math.sin(angle * spikeFreq + seed * 0.2) * spikiness;
-    const finalRadius = currentRadius * (1 + spike);
+    // Apply smooth radius variation - no spikes, just gentle undulations
+    const finalRadius = radius * (1 + variation);
     
     // Calculate point
     const x = cx + Math.cos(angle) * finalRadius;
@@ -166,18 +167,24 @@ function generateBlobPath(cx, cy, radius, points, irregularity, spikiness, seed)
     path.push({ x, y });
   }
   
-  // Create SVG path string with bezier curves for smoothness
+  // Create SVG path with extra smoothing for organic, blob-like edges
   let svgPath = `M ${path[0].x},${path[0].y}`;
   
+  // Use a cardinal spline approach for super smooth transitions
   for (let i = 0; i < points; i++) {
+    const p0 = path[(i - 1 + points) % points];
     const p1 = path[i];
     const p2 = path[(i + 1) % points];
+    const p3 = path[(i + 2) % points];
     
-    // Control points for bezier curve
-    const cp1x = p1.x + (p2.x - p1.x) * 0.5 - (path[(i + 2) % points].y - p1.y) * 0.2;
-    const cp1y = p1.y + (p2.y - p1.y) * 0.5 + (path[(i + 2) % points].x - p1.x) * 0.2;
+    // Extra smooth bezier curves with tension control
+    const tension = 0.8; // Higher = smoother
+    const cp1x = p1.x + (p2.x - p0.x) * tension / 6;
+    const cp1y = p1.y + (p2.y - p0.y) * tension / 6;
+    const cp2x = p2.x - (p3.x - p1.x) * tension / 6;
+    const cp2y = p2.y - (p3.y - p1.y) * tension / 6;
     
-    svgPath += ` C ${cp1x},${cp1y} ${cp1x},${cp1y} ${p2.x},${p2.y}`;
+    svgPath += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
   }
   
   svgPath += ' Z';
@@ -253,30 +260,27 @@ function animate() {
     });
   });
   
-  // Generate organic blob shapes with different seeds and properties
+  // Generate smooth, organic blob shapes with different seeds and properties
   const baseRadius = parentRadius * (1 + 0.05 * Math.sin(now * 0.0003));
   const baseSeed = now * 0.0001;
   const baseIrregularity = 0.12 + 0.04 * Math.sin(now * 0.0002);
-  const baseSpikiness = 0.08 + 0.03 * Math.cos(now * 0.00015);
-  const basePath = generateBlobPath(cx, cy, baseRadius, 12, baseIrregularity, baseSpikiness, baseSeed);
+  const basePath = generateBlobPath(cx, cy, baseRadius, 8, baseIrregularity, baseSeed);
   document.getElementById('baseOrb').setAttribute('d', basePath);
   
-  // Second layer - more irregular
+  // Second layer - slightly different blob pattern
   const overlay1Radius = baseRadius * 0.95;
   const overlay1Seed = now * 0.00012 + 100;
-  const overlay1Irregularity = 0.15 + 0.05 * Math.sin(now * 0.00018);
-  const overlay1Spikiness = 0.1 + 0.04 * Math.cos(now * 0.00013);
+  const overlay1Irregularity = 0.14 + 0.05 * Math.sin(now * 0.00018);
   const overlay1Path = generateBlobPath(cx + 8 * Math.sin(now * 0.0002), cy + 8 * Math.cos(now * 0.00018), 
-                                       overlay1Radius, 10, overlay1Irregularity, overlay1Spikiness, overlay1Seed);
+                                       overlay1Radius, 7, overlay1Irregularity, overlay1Seed);
   document.getElementById('overlayOrb1').setAttribute('d', overlay1Path);
   
-  // Third layer - most organic
+  // Third layer - inner blob layer
   const overlay2Radius = baseRadius * 0.9;
   const overlay2Seed = now * 0.00014 + 200;
-  const overlay2Irregularity = 0.18 + 0.06 * Math.sin(now * 0.00016);
-  const overlay2Spikiness = 0.12 + 0.05 * Math.cos(now * 0.00011);
+  const overlay2Irregularity = 0.16 + 0.06 * Math.sin(now * 0.00016);
   const overlay2Path = generateBlobPath(cx + 5 * Math.sin(now * 0.00025 + 1), cy + 5 * Math.cos(now * 0.0002 + 2), 
-                                       overlay2Radius, 8, overlay2Irregularity, overlay2Spikiness, overlay2Seed);
+                                       overlay2Radius, 6, overlay2Irregularity, overlay2Seed);
   document.getElementById('overlayOrb2').setAttribute('d', overlay2Path);
   
   requestAnimationFrame(animate);
