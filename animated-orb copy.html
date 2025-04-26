@@ -354,60 +354,8 @@ function animate() {
     const childPath = generateSuperSmoothBlob(x * scale + (1 - scale) * window.parentCenter.x, y * scale + (1 - scale) * window.parentCenter.y, cR, childPoints, morphT, cAmp, i);
     childOrbs[i].setAttribute("d", childPath);
   }
-  // Animate and render particles
-  animateParticles();
   requestAnimationFrame(animate);
 }
-{{ ... }}
-// --- Cosmic particle system ---
-
-
-
-  // Update and render particles
-  particles = particles.filter(p => p.life > 0);
-  particlesGroup.innerHTML = '';
-  for (const p of particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vx *= 0.98;
-    p.vy *= 0.98;
-    p.life -= p.decay;
-    p.opacity = Math.max(0, p.life);
-    // Guard: skip if x/y is not a valid number
-    if (typeof p.x !== 'number' || typeof p.y !== 'number' || isNaN(p.x) || isNaN(p.y)) continue;
-    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circ.setAttribute("cx", p.x);
-    circ.setAttribute("cy", p.y);
-    circ.setAttribute("r", p.r * p.opacity);
-    circ.setAttribute("fill", p.color);
-    circ.setAttribute("opacity", p.opacity * 0.7);
-    particlesGroup.appendChild(circ);
-  }
-}
-
-
-  for (let j = 0; j < count; j++) {
-    // Add a sparkle: random hue offset
-    let h = (i * 67 + now * 0.018) % 360 + (Math.random() - 0.5) * 24; // sparkle
-    let s = 85 + Math.random() * 10;
-    let l = 55 + Math.random() * 20;
-    const particleColor = hslToHex(h, s, l);
-    const angle = Math.random() * 2 * Math.PI;
-    const speed = 0.4 + Math.random() * 0.7; // slower
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
-    particles.push({
-      x, y,
-      vx, vy,
-      r: 1.1 + Math.random() * 1.2, // much smaller
-      life: 0.6, // fades faster
-      decay: 0.025 + Math.random() * 0.015, // fades faster
-      color: particleColor,
-      opacity: 0.45 // more subtle
-    });
-  }
-}
-animate();
 
 // --- Interactive ---
 function orbHitTest(mx, my) {
