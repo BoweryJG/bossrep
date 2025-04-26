@@ -155,12 +155,16 @@ function animate() {
   ];
   const now = performance.now();
   const baseHue = 190; // Centered on teal/cyan
+  const hueSpread = 32; // Larger spread for more variation
+  const satBase = 90, satSpread = 12;
+  const lightBase = 52, lightSpread = 13;
+  const phaseShift = now * 0.00025; // Makes the gradient rotate over time
   for (let i = 0; i < parentStops.length; i++) {
     const stop = parentStops[i];
-    // Hue oscillates gently around baseHue, but always in blue/teal
-    const hue = baseHue + 15 * Math.sin(now * 0.00015 + stop.phase);
-    const sat = 92 + 5 * Math.sin(now * 0.0002 + stop.phase); // Vibrant
-    const light = 54 + 7 * Math.cos(now * 0.00018 + stop.phase); // Never approaches white
+    const phase = stop.phase + phaseShift;
+    const hue = baseHue + hueSpread * Math.sin(phase);
+    const sat = satBase + satSpread * Math.cos(phase + 0.7 * i);
+    const light = lightBase + lightSpread * Math.sin(phase - 0.4 * i);
     document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
   }
 
