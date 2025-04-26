@@ -29,13 +29,11 @@
 <svg id="orbSVG" style="display:block; margin:auto; position:absolute; left:50%; top:48px; transform:translateX(-50%);">
 
   <defs>
-    <radialGradient id="parentGrad" cx="48%" cy="46%" r="72%">
-      <stop id="p0" offset="0%" stop-color="#e6f7fd"/>
-      <stop id="p1" offset="38%" stop-color="#b0e1fc"/>
-      <stop id="p2" offset="58%" stop-color="#a2d7f2"/>
-      <stop id="p3" offset="75%" stop-color="#d2c7fd"/>
-      <stop id="p4" offset="92%" stop-color="#c5f3f7"/>
-      <stop id="p5" offset="100%" stop-color="#f8fafc"/>
+    <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
+      <stop id="p0" offset="0%" stop-color="#00E5FF"/>
+      <stop id="p1" offset="100%" stop-color="#5B3CFF"/>
+      <stop id="p2" offset="50%" stop-color="#00E5FF"/>
+      <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
     </radialGradient>
   </defs>
   <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95" />
@@ -119,33 +117,15 @@ window.addEventListener('resize', adjustSVGSize);
 function animate() {
   const now = performance.now();
   const vw = window.innerWidth;
+  const vh = window.innerHeight;
   const cx = vw / 2;
-  const cy = 170; // Stationary, top of page
+  const cy = vh / 2;
   const r = parentRadius;
-
-  // Organic, liquid-like undulation
-  let amp = 1.5 + 0.7 * Math.sin(now * 0.00013) + 0.6 * Math.cos(now * 0.00009);
-  amp += 0.25 * Math.sin(now * 0.0006);
-  const t = now * 0.00008;
-  const ripple = 0.5 + 0.2 * Math.sin(now * 0.00019);
-  const path = generateSuperSmoothBlob(cx, cy, r, 64, t, amp, ripple);
+  // Subtle morph, nearly a sphere
+  const amp = 0.2 + 0.1 * Math.sin(now * 0.00005);
+  const t = now * 0.00003;
+  const path = generateSuperSmoothBlob(cx, cy, r, 64, t, amp);
   document.getElementById('parentOrb').setAttribute('d', path);
-
-  // Animate gradient stops for liquid/smoke color transitions
-  const stops = [
-    {id:'p0', base:'#e6f7fd', alt:'#f8fafc'}, // center: pearl blue-white
-    {id:'p1', base:'#b0e1fc', alt:'#d2c7fd'}, // light aqua to soft violet
-    {id:'p2', base:'#a2d7f2', alt:'#b0e1fc'}, // gentle blue
-    {id:'p3', base:'#d2c7fd', alt:'#c5f3f7'}, // soft violet to aqua
-    {id:'p4', base:'#c5f3f7', alt:'#e6f7fd'}, // aqua to pearl
-    {id:'p5', base:'#f8fafc', alt:'#b0e1fc'}  // white to blue
-  ];
-  for (let i = 0; i < stops.length; i++) {
-    // Animate between base and alt using a slow, organic oscillation
-    const tt = 0.5 + 0.5 * Math.sin(now * 0.0001 + i * 0.8 + Math.sin(now * 0.00013 + i));
-    const color = lerpColor(stops[i].base, stops[i].alt, tt);
-    document.getElementById(stops[i].id).setAttribute('stop-color', color);
-  }
   requestAnimationFrame(animate);
 }
 animate();
