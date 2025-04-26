@@ -154,12 +154,13 @@ function animate() {
     { id: "p3", phase: Math.PI * 1.5 }
   ];
   const now = performance.now();
-  const baseHue = (now * 0.01) % 360;
+  const baseHue = 190; // Centered on teal/cyan
+  const hueSpread = 20; // Only allow hue to oscillate ±20 from base
   for (let i = 0; i < parentStops.length; i++) {
     const stop = parentStops[i];
-    const hue = (baseHue + 60 * Math.sin(now * 0.00015 + stop.phase)) % 360;
-    const sat = 80 + 10 * Math.sin(now * 0.0002 + stop.phase);
-    const light = 60 + 10 * Math.cos(now * 0.00018 + stop.phase);
+    const hue = baseHue + hueSpread * Math.sin(now * 0.00015 + stop.phase); // 170–210
+    const sat = 88 + 8 * Math.sin(now * 0.0002 + stop.phase); // Vibrant
+    const light = 58 + 10 * Math.cos(now * 0.00018 + stop.phase); // Dynamic, but not white
     document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
   }
 
