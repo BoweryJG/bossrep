@@ -27,7 +27,6 @@
 </head>
 <body>
 <svg id="orbSVG">
-  <g id="particles"></g>
   <defs>
     <radialGradient id="parentGrad" cx="50%" cy="50%" r="70%">
       <stop id="p0" offset="0%" stop-color="#00E5FF"/>
@@ -35,29 +34,8 @@
       <stop id="p2" offset="50%" stop-color="#00E5FF"/>
       <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
     </radialGradient>
-    <radialGradient id="childGrad0" cx="50%" cy="50%" r="70%">
-      <stop id="c0s0" offset="0%" stop-color="#B3D8FF"/>
-      <stop id="c0s1" offset="100%" stop-color="#0A192F"/>
-    </radialGradient>
-    <radialGradient id="childGrad1" cx="50%" cy="50%" r="70%">
-      <stop id="c1s0" offset="0%" stop-color="#C6FFD9"/>
-      <stop id="c1s1" offset="100%" stop-color="#145A32"/>
-    </radialGradient>
-    <radialGradient id="childGrad2" cx="50%" cy="50%" r="70%">
-      <stop id="c2s0" offset="0%" stop-color="#FFB3C9"/>
-      <stop id="c2s1" offset="100%" stop-color="#7B1F3A"/>
-    </radialGradient>
-    <radialGradient id="childGrad3" cx="50%" cy="50%" r="70%">
-      <stop id="c3s0" offset="0%" stop-color="#E0D1FF"/>
-      <stop id="c3s1" offset="100%" stop-color="#311B4F"/>
-    </radialGradient>
-    <radialGradient id="childGrad4" cx="50%" cy="50%" r="70%">
-      <stop id="c4s0" offset="0%" stop-color="#FFF5B3"/>
-      <stop id="c4s1" offset="100%" stop-color="#4B3800"/>
-    </radialGradient>
   </defs>
   <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95"/>
-  <g id="children"></g>
 </svg>
 <script>
 // --- Utility functions ---
@@ -125,7 +103,7 @@ function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
   return d;
 }
 
-const childCount = 5;
+// Only parent orb remains
 // --- Dynamic Color Families ---
 function getDynamicColorFamily(i, now) {
   // Each orb gets a unique base hue, animated over time
@@ -138,12 +116,7 @@ function getDynamicColorFamily(i, now) {
 }
 // parentCenter will be set dynamically below
 const parentRadius = 100;
-const childRadius = 36;
-const childPoints = 48;
-const childAmp = 0.5;
-const childGradIds = [
-  "childGrad0", "childGrad1", "childGrad2", "childGrad3", "childGrad4"
-];
+
 // --- Dynamically resize SVG to fit all orbs ---
 function adjustSVGSize() {
   // Use viewport size for SVG
@@ -151,14 +124,10 @@ function adjustSVGSize() {
   const vh = window.innerHeight;
   // Store for later
   window.viewportSize = {vw, vh};
-  // Orbit radii: parentRadius + 120 + i*40 (i = 0..childCount-1)
-  const maxChildIndex = childCount - 1;
-  const maxOrbit = parentRadius + 120 + maxChildIndex * 40;
-  const maxReach = maxOrbit + childRadius + 8; // +8 for morphing amplitude margin
   // Fit orbs within the smallest viewport dimension
   const minDim = Math.min(vw, vh);
-  const scale = minDim / (maxReach * 2);
-  const size = maxReach * 2 * scale;
+  const scale = minDim / (parentRadius * 2);
+  const size = parentRadius * 2 * scale;
   const svg = document.getElementById('orbSVG');
   svg.setAttribute('width', vw);
   svg.setAttribute('height', vh);
@@ -170,11 +139,6 @@ function adjustSVGSize() {
 adjustSVGSize();
 window.addEventListener('resize', adjustSVGSize);
 
-const childrenGroup = document.getElementById('children');
-const childOrbs = [];
-
-// --- Orb State Management ---
-const orbStates = [];
 const parentOrb = document.getElementById('parentOrb');
 
 // Helper to create default orb state
@@ -395,10 +359,7 @@ function animate() {
   animateParticles();
   requestAnimationFrame(animate);
 }
-// --- Cosmic particle system ---
-const particlesGroup = document.getElementById('particles');
-let particles = [];
-
+// Removed particle system
 function animateParticles() {
   // Update and render particles
   particles = particles.filter(p => p.life > 0);
@@ -442,7 +403,7 @@ function emitParticles(x, y, color, count = 3, i = 0, now = 0) {
     });
   }
 }
-animate();
+animate(); // Only animates parent orb
 </script>
 </body>
 </html>
