@@ -332,7 +332,10 @@ function animate() {
     // Animate orbit radius: base + unique slow sine + unique noise
     const orbitPhase = now * (0.00012 + 0.00007 * i) + i * 1.13;
     const orbitWobble = Math.sin(orbitPhase) * 0.18 + Math.cos(orbitPhase * 0.7) * 0.09;
-    const orbitRadius = (parentR + 60 + (i * 0.71 + 1.4) * maxChildOrbit / childCount) * (0.7 + 0.23 * orbitWobble);
+    // Ensure minimum orbit radius so child never overlaps parent
+    const minOrbit = parentR + childRadius * (window.orbScale || 1) + 12; // 12px gap
+    let rawOrbit = (parentR + 60 + (i * 0.71 + 1.4) * maxChildOrbit / childCount) * (0.7 + 0.23 * orbitWobble);
+    const orbitRadius = Math.max(rawOrbit, minOrbit);
     // Ellipticity: each child gets a unique ellipse
     const ellipseA = orbitRadius * (0.97 + 0.07 * Math.sin(now * 0.00013 + i));
     const ellipseB = orbitRadius * (0.97 + 0.07 * Math.cos(now * 0.00016 + i * 2));
