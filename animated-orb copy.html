@@ -126,13 +126,16 @@ function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
 }
 
 const childCount = 5;
-const colorFamilies = [
-  ["#B3D8FF", "#0A192F"],
-  ["#C6FFD9", "#145A32"],
-  ["#FFB3C9", "#7B1F3A"],
-  ["#E0D1FF", "#311B4F"],
-  ["#FFF5B3", "#4B3800"]
-];
+// --- Dynamic Color Families ---
+function getDynamicColorFamily(i, now) {
+  // Each orb gets a unique base hue, animated over time
+  const baseHue = (i * 67 + now * 0.018) % 360;
+  const hue2 = (baseHue + 40 + 20 * Math.sin(now * 0.0007 + i)) % 360;
+  const sat = 80 + 10 * Math.sin(now * 0.0005 + i);
+  const light1 = 60 + 10 * Math.cos(now * 0.0004 + i * 2);
+  const light2 = 35 + 15 * Math.sin(now * 0.0006 + i * 3);
+  return [hslToHex(baseHue, sat, light1), hslToHex(hue2, sat, light2)];
+}
 // parentCenter will be set dynamically below
 const parentRadius = 100;
 const childRadius = 36;
@@ -314,8 +317,8 @@ function animate() {
   childrenGroup.innerHTML = '';
   for (let i = 0; i < childCount; i++) {
     const state = orbStates[i + 1];
-    // Animate gradient stops for each child
-    const fam = colorFamilies[i];
+    // Animate dynamic color family for each orb
+    const fam = getDynamicColorFamily(i, now);
     const tcol = 0.5 + 0.5 * Math.sin(now * 0.0005 + i);
     document.getElementById(`c${i}s0`).setAttribute("stop-color", lerpColor(fam[0], fam[1], tcol));
     document.getElementById(`c${i}s1`).setAttribute("stop-color", lerpColor(fam[1], fam[0], tcol));
@@ -366,20 +369,20 @@ function animate() {
       const color = lerpColor(fam[0], fam[1], tcol);
       // Emit more particles as fade approaches zero
       const emission = Math.ceil((0.5 - fade) * 12); // up to 6 particles per frame
-      emitParticles(x, y, color, emission);
+      emitParticles(x, y, color, emission, i, now);
       path.setAttribute("opacity", fade * 0.95);
     }
     // If orb just became invisible, emit a final burst and hide
     else if (state.wasVisible && fade <= 0.05) {
       const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 12); // big burst
+      emitParticles(x, y, color, 12, i, now); // big burst
       path.setAttribute("opacity", 0);
       state.wasVisible = false;
     }
     // If orb just became visible, emit appear particles and show
     else if (!state.wasVisible && fade > 0.05) {
       const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, 9);
+      emitParticles(x, y, color, 9, i, now);
       path.setAttribute("opacity", fade * 0.95);
       state.wasVisible = true;
     } else {
@@ -417,8 +420,13 @@ function animateParticles() {
   }
 }
 
-function emitParticles(x, y, color, count = 3) {
-  for (let i = 0; i < count; i++) {
+function emitParticles(x, y, color, count = 3, i = 0, now = 0) {
+  for (let j = 0; j < count; j++) {
+    // Add a sparkle: random hue offset
+    let h = (i * 67 + now * 0.018) % 360 + (Math.random() - 0.5) * 24; // sparkle
+    let s = 85 + Math.random() * 10;
+    let l = 55 + Math.random() * 20;
+    const particleColor = hslToHex(h, s, l);
     const angle = Math.random() * 2 * Math.PI;
     const speed = 0.4 + Math.random() * 0.7; // slower
     const vx = Math.cos(angle) * speed;
@@ -429,7 +437,7 @@ function emitParticles(x, y, color, count = 3) {
       r: 1.1 + Math.random() * 1.2, // much smaller
       life: 0.6, // fades faster
       decay: 0.025 + Math.random() * 0.015, // fades faster
-      color,
+      color: particleColor,
       opacity: 0.45 // more subtle
     });
   }
