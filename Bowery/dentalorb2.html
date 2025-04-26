@@ -123,7 +123,24 @@ window.addEventListener('resize', adjustSVGSize);
 
 const parentOrb = document.getElementById('parentOrb');
 
+// --- Mouse tracking for proximity and velocity ---
+window.mouse = { x: window.innerWidth/2, y: window.innerHeight/2, lastX: window.innerWidth/2, lastY: window.innerHeight/2, speed: 0 };
+window.addEventListener('mousemove', (e) => {
+  window.mouse.lastX = window.mouse.x;
+  window.mouse.lastY = window.mouse.y;
+  window.mouse.x = e.clientX;
+  window.mouse.y = e.clientY;
+  const dx = window.mouse.x - window.mouse.lastX;
+  const dy = window.mouse.y - window.mouse.lastY;
+  window.mouse.speed = Math.sqrt(dx*dx + dy*dy);
+});
 
+// --- Haptic feedback on orb click ---
+document.getElementById('parentOrb').addEventListener('click', () => {
+  if (window.navigator.vibrate) {
+    window.navigator.vibrate(40);
+  }
+});
 
 function approach(current, target, speed) {
   return current + (target - current) * speed;
@@ -173,15 +190,20 @@ function animate() {
   const py = vh / 2;
   window.parentCenter = {x: px, y: py};
 
+  // --- Mouse proximity and velocity effects ---
+  const dist = Math.sqrt(Math.pow(px - window.mouse.x, 2) + Math.pow(py - window.mouse.y, 2));
+  const maxDist = Math.min(vw, vh) / 2;
+  const proximity = 1 - Math.min(dist / maxDist, 1); // 1 = close, 0 = far
+  const mouseWobble = Math.min(window.mouse.speed / 40, 1.2); // Cap wobble
   const parentR = parentRadius + orbState.drag * 0.15;
-  // Reduce amplitude for a more spherical look
-  const parentAmp = 0.45 + Math.abs(orbState.drag) * 0.005;
+  const parentAmp = 0.45 + proximity * 0.55 + mouseWobble * 0.5;
   const parentMorphT = now * 0.0004;
   const parentDx = Math.cos(orbMorphDirection) * orbState.drag;
   const parentDy = Math.sin(orbMorphDirection) * orbState.drag;
-  // Use more points for smoothness
   const parentPath = generateSuperSmoothBlob(px + parentDx, py + parentDy, parentR, 80, parentMorphT, parentAmp);
   parentOrb.setAttribute('d', parentPath);
+
+  window.mouse.speed *= 0.93; // Smooth out velocity
 
   requestAnimationFrame(animate);
 }
