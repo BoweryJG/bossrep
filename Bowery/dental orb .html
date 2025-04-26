@@ -36,8 +36,99 @@
       <stop id="p3" offset="75%" stop-color="#5B3CFF"/>
     </radialGradient>
   </defs>
-  <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95" d="M400,400m-100,0a100,100 0 1,0 200,0a100,100 0 1,0 -200,0" />
+  <path id="parentOrb" fill="url(#parentGrad)" opacity="0.95" />
 </svg>
+<script>
+// --- Utility functions ---
+function lerp(a, b, t) { return a + (b - a) * t; }
+function hslToHex(h, s, l) {
+  h /= 360; s /= 100; l /= 100;
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return "#" + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, "0")).join("");
+}
+function lerpColor(a, b, t) {
+  const ah = parseInt(a.replace('#', ''), 16), bh = parseInt(b.replace('#', ''), 16);
+  const ar = (ah >> 16) & 0xff, ag = (ah >> 8) & 0xff, ab = ah & 0xff;
+  const br = (bh >> 16) & 0xff, bg = (bh >> 8) & 0xff, bb = bh & 0xff;
+  const rr = Math.round(ar + (br - ar) * t);
+  const rg = Math.round(ag + (bg - ag) * t);
+  const rb = Math.round(ab + (bb - ab) * t);
+  return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb).toString(16).slice(1);
+}
+function generateSuperSmoothBlob(cx, cy, r, points, t, amp=1, phase=0) {
+  const pts = [];
+  for (let i = 0; i < points; i++) {
+    const angle = (Math.PI * 2 * i) / points;
+    const noise =
+      Math.sin(angle * 3 + t * 0.7 + phase) * 4 * amp +
+      Math.sin(angle * 5 - t * 1.1 + phase) * 2 * amp +
+      Math.sin(angle * 2 + t * 1.7 + phase) * 1.2 * amp;
+    const rad = r + noise;
+    pts.push({
+      x: cx + Math.cos(angle) * rad,
+      y: cy + Math.sin(angle) * rad
+    });
+  }
+  let d = "";
+  for (let i = 0; i < points; i++) {
+    const p0 = pts[(i - 1 + points) % points];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % points];
+    const p3 = pts[(i + 2) % points];
+    if (i === 0) {
+      d += `M${p1.x.toFixed(2)},${p1.y.toFixed(2)}`;
+    }
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+  }
+  d += "Z";
+  return d;
+}
+const parentRadius = 100;
+function adjustSVGSize() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const svg = document.getElementById('orbSVG');
+  svg.setAttribute('width', vw);
+  svg.setAttribute('height', vh);
+  svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+}
+adjustSVGSize();
+window.addEventListener('resize', adjustSVGSize);
+function animate() {
+  const now = performance.now();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const cx = vw / 2;
+  const cy = vh / 2;
+  const r = parentRadius;
+  const amp = 10 + 8 * Math.sin(now * 0.0003);
+  const t = now * 0.0012;
+  const path = generateSuperSmoothBlob(cx, cy, r, 64, t, amp);
+  document.getElementById('parentOrb').setAttribute('d', path);
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
 </body>
 </html>
   // Prevent page scroll
