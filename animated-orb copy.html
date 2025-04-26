@@ -361,62 +361,13 @@ function emitParticles(x, y, color, count = 8) {
     const speed = 0.7 + Math.random() * 1.7;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
-    particles.push({
-      x, y,
-      vx, vy,
-      r: 3 + Math.random() * 4,
-      life: 1,
-      decay: 0.012 + Math.random() * 0.012,
-      color,
-      opacity: 1
-    });
-  }
-}
-
-function animateParticles() {
-  // Update and render particles
-  particles = particles.filter(p => p.life > 0);
-  particlesGroup.innerHTML = '';
-  for (const p of particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vx *= 0.98;
-    p.vy *= 0.98;
-    p.life -= p.decay;
-    p.opacity = Math.max(0, p.life);
-    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circ.setAttribute("cx", p.x);
-    circ.setAttribute("cy", p.y);
-    circ.setAttribute("r", p.r * p.opacity);
-    circ.setAttribute("fill", p.color);
-    circ.setAttribute("opacity", p.opacity * 0.7);
-    particlesGroup.appendChild(circ);
-  }
-}
-
-// --- Modify animate() to emit particles when orbs dissolve ---
-const DISSOLVE_THRESHOLD = 40; // dragTarget threshold to start dissolution
-const PARTICLES_PER_FRAME = 5;
-
-function animate() {
-  // ... existing animate code ...
-
-  // --- Children ---
-  let behind = [], front = [];
-  const parentY = window.parentCenter.y;
-  for (let i = 0; i < childCount; i++) {
-    const state = orbStates[i + 1];
-    // ... existing child orb code ...
-    // At the end of each child orb's update:
     // If dissolving (dragTarget large), emit particles
-    if (Math.abs(state.dragTarget) > DISSOLVE_THRESHOLD) {
+    if (Math.abs(state.dragTarget) > 40) {
       // Use orb color
-      const fam = colorFamilies[i];
-      const tcol = 0.5 + 0.5 * Math.sin(performance.now() * 0.0005 + i);
       const color = lerpColor(fam[0], fam[1], tcol);
-      emitParticles(x, y, color, PARTICLES_PER_FRAME);
+      emitParticles(x, y, color, 5);
     }
-    // ...
+    // ... (rest of child orb code)
     // (rest of child z-order code)
   }
   // ...
