@@ -210,43 +210,32 @@ function animate() {
     document.getElementById(stop.id).setAttribute("stop-color", hslToHex(hue, sat, light));
   }
 
-  // --- Animate orb morph states (drag gravity, squash, mouseDir, wobble) ---
-  for (let i = 0; i < orbStates.length; i++) {
-    const state = orbStates[i];
-    // Each orb has a unique springiness and damping (slower for parent, varied for children)
-    const spring = 0.045 * (1 + orbMorphSpeeds[i]); // lower = slower
-    const damping = 0.90 - orbMorphSpeeds[i] * 0.33; // higher = longer wobble
-    [state.drag, state.dragV] = dampedSpring(state.drag, state.dragTarget, state.dragV, spring, damping);
-    // Wobble on release (slower phase for more dissolution)
-    if (Math.abs(state.dragTarget) < 0.1 && Math.abs(state.drag) > 0.1) {
-      state.wobble += 0.04 + orbMorphSpeeds[i] * 0.9; // slower, unique for each orb
-      state.drag += Math.sin(state.wobble) * Math.max(0, Math.abs(state.drag) * 0.13 * (1 + orbMorphSpeeds[i]));
-    } else if (Math.abs(state.dragTarget) < 0.1) {
-      state.wobble = 0; // reset when at rest
-    }
-    // Decay dragTarget very slowly for beautiful dissolution
-    state.dragTarget = approach(state.dragTarget, 0, 0.018 + orbMorphSpeeds[i] * 0.6);
-    // (Squash & mouseDir to be handled in next steps)
-  }
-
-  // --- Parent orb ---
+  // Animate parent orb state
   const parentState = orbStates[0];
-  const parentMorphT = now * 0.0004;
-  const parentDrag = parentState.drag;
-  // Morph: drag stretches along its direction, so project drag
-  const parentAngle = orbMorphDirections[0];
-  const parentDx = Math.cos(parentAngle) * parentDrag;
-  const parentDy = Math.sin(parentAngle) * parentDrag;
-  const scale = window.orbScale || 1;
+  const spring = 0.045 * (1 + orbMorphSpeeds[0]);
+  const damping = 0.90 - orbMorphSpeeds[0] * 0.33;
+  [parentState.drag, parentState.dragV] = dampedSpring(parentState.drag, parentState.dragTarget, parentState.dragV, spring, damping);
+  if (Math.abs(parentState.dragTarget) < 0.1 && Math.abs(parentState.drag) > 0.1) {
+    parentState.wobble += 0.04 + orbMorphSpeeds[0] * 0.9;
+    parentState.drag += Math.sin(parentState.wobble) * Math.max(0, Math.abs(parentState.drag) * 0.13 * (1 + orbMorphSpeeds[0]));
+  } else if (Math.abs(parentState.dragTarget) < 0.1) {
+    parentState.wobble = 0;
+  }
+  parentState.dragTarget = approach(parentState.dragTarget, 0, 0.018 + orbMorphSpeeds[0] * 0.6);
 
-  // --- Animate parent orb's position with slow, organic drift ---
+  // Animate parent orb's position with slow, organic drift
   const {vw, vh} = window.viewportSize || {vw: 800, vh: 800};
-  // Safe zone: parent can drift within 20% of screen center
   const px = window.parentCenterBase.x + Math.sin(now * 0.00011) * vw * 0.09 + Math.cos(now * 0.00007) * vw * 0.07;
   const py = window.parentCenterBase.y + Math.cos(now * 0.00009) * vh * 0.08 + Math.sin(now * 0.00016) * vh * 0.06;
   window.parentCenter = {x: px, y: py};
 
-  const parentR = (parentRadius + parentDrag * 0.15) * scale;
+  const parentR = (parentRadius + parentState.drag * 0.15) * (window.orbScale || 1);
+  const parentAmp = (1 + Math.abs(parentState.drag) * 0.008) * (window.orbScale || 1);
+  const parentMorphT = now * 0.0004;
+  const parentAngle = orbMorphDirections[0];
+  const parentDx = Math.cos(parentAngle) * parentState.drag;
+  const parentDy = Math.sin(parentAngle) * parentState.drag;
+  const parentPath = generateSuperSmoothBlob(px + parentDx * (window.orbScale || 1), py + parentDy * (window.orbScale || 1), parentR, 64, parentMorphT, parentAmp);
   const parentAmp = (1 + Math.abs(parentDrag) * 0.008) * scale;
   const parentPath = generateSuperSmoothBlob(px + parentDx * scale, py + parentDy * scale, parentR, 64, parentMorphT, parentAmp);
   parentOrb.setAttribute('d', parentPath);
